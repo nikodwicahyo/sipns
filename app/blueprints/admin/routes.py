@@ -1,3 +1,5 @@
+import os
+from datetime import datetime
 from flask import render_template, redirect, url_for, flash, request, jsonify, abort
 from flask_login import login_required, current_user
 from app.blueprints.admin import admin_bp
@@ -286,6 +288,35 @@ def reset_password_user(id):
 def audit_log():
     logs = AuditLog.query.order_by(AuditLog.created_at.desc()).all()
     return render_template('admin/audit/index.html', logs=logs)
+
+
+# --- Health Check ---
+
+@admin_bp.route('/health')
+@login_required
+@role_required('admin')
+def health_check():
+    import time
+    start = time.time()
+    status = 'healthy'
+    db_info = {}
+    try:
+        db.session.execute(db.text('SELECT 1'))
+        elapsed = round((time.time() - start) * 1000, 2)
+        db_info = {'status': 'connected', 'response_time_ms': elapsed}
+    except Exception as e:
+        status = 'degraded'
+        db_info = {'status': 'error', 'message': str(e)}
+
+    result = {
+        'status': status,
+        'timestamp': datetime.utcnow().isoformat(),
+        'database': db_info,
+        'app': 'SIPNS',
+        'flask_env': os.environ.get('FLASK_ENV', 'unknown'),
+    }
+    http_code = 200 if status == 'healthy' else 503
+    return jsonify(result), http_code
 
 
 # --- API Endpoints ---

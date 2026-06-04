@@ -13,9 +13,6 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Migration
-migrations/
-
 # Test cache
 .pytest_cache/
 htmlcov/

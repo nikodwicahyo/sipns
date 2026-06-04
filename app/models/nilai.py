@@ -21,6 +21,22 @@ class Nilai(db.Model):
 
     __table_args__ = (
         db.UniqueConstraint('siswa_id', 'mata_pelajaran', name='uq_siswa_mapel'),
+        db.CheckConstraint(
+            'nilai_tugas >= 0 AND nilai_tugas <= 100',
+            name='ck_nilai_tugas_range'
+        ),
+        db.CheckConstraint(
+            'nilai_uts >= 0 AND nilai_uts <= 100',
+            name='ck_nilai_uts_range'
+        ),
+        db.CheckConstraint(
+            'nilai_uas >= 0 AND nilai_uas <= 100',
+            name='ck_nilai_uas_range'
+        ),
+        db.CheckConstraint(
+            'nilai_akhir >= 0 AND nilai_akhir <= 100',
+            name='ck_nilai_akhir_range'
+        ),
     )
 
     def __repr__(self):
