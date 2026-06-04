@@ -67,11 +67,16 @@ def create_app(config_name=None):
                 return redirect(url_for('siswa.dashboard'))
         return redirect(url_for('auth.login'))
 
+    from app.utils.time import format_jakarta, current_year_jakarta
+
+    @app.template_filter('jakarta')
+    def jakarta_filter(dt, fmt='%d/%m/%Y %H:%M'):
+        return format_jakarta(dt, fmt)
+
     @app.context_processor
     def inject_globals():
-        from datetime import datetime
         return {
-            'current_year': datetime.utcnow().year,
+            'current_year': current_year_jakarta(),
             'app_name': 'SIPNS',
         }
 

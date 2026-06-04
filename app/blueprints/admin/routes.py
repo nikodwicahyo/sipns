@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from flask import render_template, redirect, url_for, flash, request, jsonify, abort
+from app.utils.time import now_jakarta
 from flask_login import login_required, current_user
 from app.blueprints.admin import admin_bp
 from app.blueprints.decorators import role_required
@@ -317,7 +318,7 @@ def health_check():
         db_status=db_status,
         db_error=db_error,
         flask_env=os.environ.get('FLASK_ENV', 'unknown'),
-        timestamp=datetime.utcnow(),
+        timestamp=now_jakarta(),
     )
 
 

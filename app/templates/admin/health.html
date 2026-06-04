@@ -69,7 +69,7 @@
                 </tr>
                 <tr>
                     <th>Timestamp</th>
-                    <td>{{ timestamp.strftime('%d/%m/%Y %H:%M:%S') }} UTC</td>
+                    <td>{{ timestamp | jakarta('%d/%m/%Y %H:%M:%S') }} WIB</td>
                 </tr>
                 <tr>
                     <th>Database Status</th>

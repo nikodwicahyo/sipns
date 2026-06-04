@@ -1,3 +1,5 @@
+# MySQL driver (required for production/development)
+PyMySQL==1.1.1
 Flask==3.1.0
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.7
@@ -5,8 +7,10 @@ Flask-Login==0.6.3
 Flask-WTF==1.2.1
 python-dotenv==1.0.1
 Werkzeug==3.1.3
-WeasyPrint==62.3
+WeasyPrint==61.2
+pydyf==0.10.0
 openpyxl==3.1.5
 pytest==8.3.4
 pytest-flask==1.3.0
 WTForms==3.1.2
+tzdata==2026.2
