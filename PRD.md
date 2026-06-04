@@ -224,8 +224,7 @@ Pengelolaan nilai siswa di banyak institusi pendidikan masih dilakukan secara ma
 | **Migration** | Flask-Migrate | 4.x | Database schema versioning (Alembic) |
 | **Authentication** | Flask-Login | 0.6.x | Session management & login |
 | **Form Validation** | Flask-WTF | 1.x | WTForms + CSRF protection |
-| **Database** | MySQL | 8.x | RDBMS utama |
-| **DB Driver** | PyMySQL | 1.x | Python MySQL connector |
+| **Database** | SQLite | 3.x | RDBMS embedded (development) |
 | **Frontend** | HTML5 | — | Markup |
 | **Styling** | Bootstrap | 5.3 | CSS framework responsif |
 | **Template** | Jinja2 | 3.x | Server-side rendering |
@@ -1105,7 +1104,7 @@ TC-06: NA = (0.30 × 50) + (0.30 × 60) + (0.40 × 65)
 | 6 | Sistem tidak memiliki fitur reset password mandiri; harus melalui admin |
 | 7 | Rentang nilai valid: 0 sampai 100 (desimal diperbolehkan) |
 | 8 | KKM bersifat tetap (70) dan tidak dapat dikonfigurasi per mata pelajaran |
-| 9 | Sistem hanya mendukung satu database MySQL; tidak ada multi-tenant |
+| 9 | Sistem hanya mendukung satu database SQLite; tidak ada multi-tenant |
 | 10 | Tidak ada notifikasi email/SMS |
 
 ---
@@ -1116,7 +1115,7 @@ TC-06: NA = (0.30 × 50) + (0.30 × 60) + (0.40 × 65)
 |--------|-------------|--------|----------|
 | Konflik versi library Python | Sedang | Tinggi | Gunakan `requirements.txt` dengan versi terkunci; virtual environment |
 | WeasyPrint kesulitan rendering font | Sedang | Sedang | Gunakan font web-safe; test PDF di awal development |
-| MySQL tidak terpasang di environment | Rendah | Tinggi | Sediakan Docker Compose untuk setup cepat |
+| SQLite tidak kompatibel di environment tertentu | Rendah | Rendah | Gunakan SQLite bawaan Python; tidak perlu setup tambahan |
 | SQL Injection melalui form input | Rendah | Sangat Tinggi | Selalu gunakan SQLAlchemy ORM; tidak pernah raw query dari input user |
 | Data nilai terhapus tidak sengaja | Rendah | Sangat Tinggi | Implementasi soft delete; audit log semua operasi DELETE |
 | Performa lambat untuk data besar | Rendah | Sedang | Gunakan pagination DataTables; tambahkan database index |
@@ -1159,10 +1158,7 @@ Contoh Nilai Budi di Matematika:
 FLASK_APP=run.py
 FLASK_ENV=development
 SECRET_KEY=your-secret-key-here
-DATABASE_URL=mysql+pymysql://user:password@localhost:3306/sipns_db
-MYSQL_USER=sipns_user
-MYSQL_PASSWORD=sipns_password
-MYSQL_DATABASE=sipns_db
+DATABASE_URL=sqlite:///sipns_dev.db
 ```
 
 ### C. Perintah Setup Awal

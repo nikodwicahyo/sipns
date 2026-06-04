@@ -24,7 +24,7 @@ class ProductionConfig(Config):
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'DATABASE_URL',
-        'mysql+pymysql://sipns_user:sipns_password@localhost:3306/sipns_db'
+        'sqlite:///sipns_prod.db'
     )
 
 

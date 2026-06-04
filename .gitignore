@@ -3,12 +3,15 @@
 venv/
 .venv/
 
+# Database
+*.db
+instance/
+
 # Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-*.db
 
 # Migration
 migrations/

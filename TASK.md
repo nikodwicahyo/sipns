@@ -163,7 +163,7 @@ Total                            ░░░░░░░░░░░░░░░�
 ### 2.1 Persiapan Environment
 
 - [ ] **F2-001** — Install Python 3.12 dan pastikan versi aktif dengan `python --version`
-- [ ] **F2-002** — Install MySQL 8.x dan pastikan service berjalan
+- [x] **F2-002** — SQLite sudah tersedia bawaan Python 3.x (tanpa instalasi tambahan)
 - [ ] **F2-003** — Install VS Code dengan ekstensi: Python, Pylance, SQLTools, GitLens
 - [ ] **F2-004** — Buat virtual environment: `python -m venv venv`
 - [ ] **F2-005** — Aktifkan virtual environment dan verifikasi path Python interpreter
@@ -219,7 +219,7 @@ Total                            ░░░░░░░░░░░░░░░�
   Flask-Migrate==4.0.7
   Flask-Login==0.6.3
   Flask-WTF==1.2.1
-  PyMySQL==1.1.1
+  # PyMySQL tidak diperlukan; SQLite bawaan Python
   python-dotenv==1.0.1
   Werkzeug==3.1.3
   WeasyPrint==62.3
@@ -256,18 +256,12 @@ Total                            ░░░░░░░░░░░░░░░�
 
 ### 2.5 Setup Database
 
-- [ ] **F2-018** — Buat MySQL database: `CREATE DATABASE sipns_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
-- [ ] **F2-019** — Buat MySQL user dan grant privileges:
-  ```sql
-  CREATE USER 'sipns_user'@'localhost' IDENTIFIED BY 'sipns_password';
-  GRANT ALL PRIVILEGES ON sipns_db.* TO 'sipns_user'@'localhost';
-  FLUSH PRIVILEGES;
-  ```
+- [x] **F2-018** — SQLite: database file otomatis dibuat oleh SQLAlchemy di `instance/sipns_dev.db`
 - [ ] **F2-020** — Uji koneksi database dari Python: `flask shell` → `db.engine.connect()`
 - [ ] **F2-021** — Jalankan `flask db init` untuk inisialisasi folder migrations
 - [ ] **F2-022** — Buat skeleton semua model SQLAlchemy (tanpa relasi dulu)
 - [ ] **F2-023** — Jalankan `flask db migrate -m "Initial migration: create all tables"`
-- [ ] **F2-024** — Jalankan `flask db upgrade` dan verifikasi tabel terbuat di MySQL
+- [x] **F2-024** — Jalankan `flask db upgrade` dan verifikasi tabel terbuat di SQLite
 - [ ] **F2-025** — Screenshot/catat bukti koneksi database berhasil untuk dokumentasi Tugas 1
 
 ### 2.6 Seed Data
@@ -277,7 +271,7 @@ Total                            ░░░░░░░░░░░░░░░�
 - [ ] **F2-028** — Seed data guru: 3 guru dengan mata pelajaran berbeda (Matematika, Bahasa Indonesia, IPA)
 - [ ] **F2-029** — Seed data siswa: minimal 10 siswa dari 2 kelas berbeda (X-IPA-1, X-IPA-2)
 - [ ] **F2-030** — Seed data nilai: nilai sample untuk semua kombinasi siswa–mapel
-- [ ] **F2-031** — Verifikasi seed data dengan query langsung ke MySQL
+- [x] **F2-031** — Verifikasi seed data dengan query langsung ke SQLite
 - [ ] **F2-032** — Dokumentasikan kredensial seed data di `docs/seed_credentials.md`
 
 ### 2.7 Version Control
@@ -294,7 +288,7 @@ Total                            ░░░░░░░░░░░░░░░�
 - [ ] Virtual environment aktif dan semua dependency terinstall
 - [ ] Struktur direktori lengkap sesuai arsitektur
 - [ ] `app/__init__.py` dengan application factory berfungsi
-- [ ] Database MySQL terkoneksi dan semua tabel terbuat
+- [x] Database SQLite terkoneksi dan semua tabel terbuat
 - [ ] `flask run` berhasil tanpa error, aplikasi bisa diakses di `localhost:5000`
 - [ ] Seed data berhasil dijalankan
 - [ ] Repository GitHub aktif dengan commit awal
@@ -561,7 +555,7 @@ Total                            ░░░░░░░░░░░░░░░�
 
 - [ ] **F3-090** — Jalankan `flask db migrate -m "Add all model relationships"` setelah semua model selesai
 - [ ] **F3-091** — Jalankan `flask db upgrade` dan verifikasi schema
-- [ ] **F3-092** — Verifikasi semua constraint (UNIQUE, FK, CHECK) teraplikasi di MySQL
+- [ ] **F3-092** — Verifikasi semua constraint (UNIQUE, FK, CHECK) teraplikasi di SQLite
 
 ### ✅ Checklist Output Fase 3
 
@@ -1025,7 +1019,7 @@ Total                            ░░░░░░░░░░░░░░░�
 - [ ] **F6-078** — Verifikasi UNIQUE constraint NIS (coba insert NIS duplikat → error)
 - [ ] **F6-079** — Verifikasi soft delete: query `Siswa.query.filter_by(deleted_at=None)` tidak return deleted siswa
 - [ ] **F6-080** — Verifikasi kalkulasi nilai_akhir di DB sesuai formula (spot check 5 data)
-- [ ] **F6-081** — Screenshot bukti pengujian database (MySQL Workbench / phpMyAdmin / terminal)
+- [ ] **F6-081** — Screenshot bukti pengujian database (SQLite / terminal / DB Browser)
 
 ### ✅ Checklist Output Fase 6
 
@@ -1071,7 +1065,7 @@ Total                            ░░░░░░░░░░░░░░░�
   - **Deskripsi** singkat sistem
   - **Tech Stack** (tabel lengkap)
   - **Fitur Utama** (list per role)
-  - **Prasyarat** (Python, MySQL, WeasyPrint dependencies)
+  - **Prasyarat** (Python, SQLite, WeasyPrint dependencies)
   - **Instalasi** step-by-step:
     1. Clone repo
     2. Buat virtual environment
@@ -1159,7 +1153,7 @@ Total                            ░░░░░░░░░░░░░░░�
 - [ ] **F7-031** — Screenshot: transkrip PDF siswa
 - [ ] **F7-032** — Screenshot: file Excel yang di-generate
 - [ ] **F7-033** — Screenshot: output `pytest` menunjukkan semua test PASS
-- [ ] **F7-034** — Screenshot: tabel database MySQL (minimal 3 tabel)
+- [ ] **F7-034** — Screenshot: tabel database SQLite (minimal 3 tabel)
 - [ ] **F7-035** — Simpan semua screenshot ke `docs/screenshots/`
 
 ### ✅ Checklist Output Fase 7
