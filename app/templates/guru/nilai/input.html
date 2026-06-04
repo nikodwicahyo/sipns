@@ -69,7 +69,7 @@
         const select = document.getElementById('siswaSelect');
         select.innerHTML = '<option value="">-- Pilih Siswa --</option>';
         if (kelas) {
-            fetch('/admin/api/siswa-by-kelas/' + kelas)
+            fetch('/admin/api/siswa-by-kelas/' + encodeURIComponent(kelas))
                 .then(r => r.json())
                 .then(data => {
                     data.forEach(s => {

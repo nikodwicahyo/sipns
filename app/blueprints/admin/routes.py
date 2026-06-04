@@ -326,7 +326,7 @@ def health_check():
 
 # --- API Endpoints ---
 
-@admin_bp.route('/api/siswa-by-kelas/<kelas>')
+@admin_bp.route('/api/siswa-by-kelas/<path:kelas>')
 @login_required
 def api_siswa_by_kelas(kelas):
     siswa_list = Siswa.query.filter(
@@ -363,10 +363,10 @@ def api_nilai_preview():
         return jsonify({'error': 'Terjadi kesalahan'}), 500
 
 
-@admin_bp.route('/api/statistik-kelas/<kelas>')
+@admin_bp.route('/api/statistik-kelas/<path:kelas>')
 @login_required
 def api_statistik_kelas(kelas):
-    data_nilai = Nilai.query.join(Siswa).filter(
+    data_nilai = Nilai.query.join(Siswa, Nilai.siswa_id == Siswa.id).filter(
         Siswa.kelas == kelas, Siswa.deleted_at.is_(None)
     ).all()
     from app.services.nilai_service import hitung_statistik_kelas

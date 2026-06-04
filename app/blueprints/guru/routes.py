@@ -23,7 +23,7 @@ def dashboard():
         Nilai.guru_id == guru.id
     ).scalar() or 0
 
-    kelas_tercatat = db.session.query(Siswa.kelas).join(Nilai).filter(
+    kelas_tercatat = db.session.query(Siswa.kelas).join(Nilai, Nilai.siswa_id == Siswa.id).filter(
         Nilai.guru_id == guru.id, Siswa.deleted_at.is_(None)
     ).distinct().all()
     kelas_list = [k[0] for k in kelas_tercatat]
@@ -149,7 +149,7 @@ def rekap_nilai():
     guru = Guru.query.get(current_user.guru_id)
     kelas_list = Siswa.daftar_kelas()
 
-    data_nilai = Nilai.query.filter_by(guru_id=guru.id).join(Siswa).filter(
+    data_nilai = Nilai.query.filter_by(guru_id=guru.id).join(Siswa, Nilai.siswa_id == Siswa.id).filter(
         Siswa.deleted_at.is_(None)
     ).order_by(Siswa.kelas, Siswa.nama).all()
 

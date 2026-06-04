@@ -14,20 +14,20 @@ from app.utils.time import now_jakarta
 def index():
     kelas_list = [
         r[0] for r in db.session.query(Siswa.kelas)
-        .join(Nilai, Siswa.id == Nilai.siswa_id)
+        .join(Nilai, Nilai.siswa_id == Siswa.id)
         .filter(Siswa.deleted_at.is_(None))
         .distinct().order_by(Siswa.kelas).all()
     ]
     return render_template('laporan/index.html', kelas_list=kelas_list)
 
 
-@laporan_bp.route('/pdf/kelas/<kelas>')
+@laporan_bp.route('/pdf/kelas/<path:kelas>')
 @login_required
 def pdf_kelas(kelas):
     if current_user.is_siswa():
         abort(403)
 
-    if not Nilai.query.join(Siswa).filter(
+    if not Nilai.query.join(Siswa, Nilai.siswa_id == Siswa.id).filter(
         Siswa.kelas == kelas, Siswa.deleted_at.is_(None)
     ).first():
         flash(f'Tidak ada data nilai untuk kelas {kelas}.', 'warning')
@@ -43,11 +43,12 @@ def pdf_kelas(kelas):
             description=f'Cetak PDF rekap nilai kelas {kelas}',
             ip_address=request.remote_addr,
         )
+        safe_kelas = kelas.replace('/', '_')
         return Response(
             pdf_bytes,
             mimetype='application/pdf',
             headers={
-                'Content-Disposition': f'attachment; filename=rekap_{kelas}_{tanggal}.pdf'
+                'Content-Disposition': f'attachment; filename=rekap_{safe_kelas}_{tanggal}.pdf'
             },
         )
     except Exception as e:
@@ -92,7 +93,7 @@ def excel():
         abort(403)
 
     kelas = request.args.get('kelas')
-    if kelas and not Nilai.query.join(Siswa).filter(
+    if kelas and not Nilai.query.join(Siswa, Nilai.siswa_id == Siswa.id).filter(
         Siswa.kelas == kelas, Siswa.deleted_at.is_(None)
     ).first():
         flash(f'Tidak ada data nilai untuk kelas {kelas}.', 'warning')
@@ -113,7 +114,8 @@ def excel():
             description=f'Ekspor Excel nilai kelas {kelas or "semua"}',
             ip_address=request.remote_addr,
         )
-        filename = f'nilai_{kelas if kelas else "semua"}_{tanggal}.xlsx'
+        safe_kelas = kelas.replace('/', '_') if kelas else None
+        filename = f'nilai_{safe_kelas if kelas else "semua"}_{tanggal}.xlsx'
         return Response(
             excel_bytes,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

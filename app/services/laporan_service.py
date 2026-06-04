@@ -19,7 +19,7 @@ def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html'):
     try:
         data_nilai = (
             Nilai.query
-            .join(Siswa)
+            .join(Siswa, Nilai.siswa_id == Siswa.id)
             .filter(Siswa.kelas == kelas, Siswa.deleted_at.is_(None))
             .order_by(Siswa.nama)
             .all()
@@ -75,9 +75,9 @@ def export_excel(kelas=None, dicetak_oleh=None):
     ws.title = "Rekap Nilai"
 
     if kelas:
-        query = Nilai.query.join(Siswa).filter(Siswa.kelas == kelas, Siswa.deleted_at.is_(None))
+        query = Nilai.query.join(Siswa, Nilai.siswa_id == Siswa.id).filter(Siswa.kelas == kelas, Siswa.deleted_at.is_(None))
     else:
-        query = Nilai.query.join(Siswa).filter(Siswa.deleted_at.is_(None))
+        query = Nilai.query.join(Siswa, Nilai.siswa_id == Siswa.id).filter(Siswa.deleted_at.is_(None))
 
     data_nilai = query.order_by(Siswa.kelas, Siswa.nama).all()
 

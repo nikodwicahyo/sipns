@@ -58,13 +58,13 @@
     function cetakPdf() {
         const kelas = document.getElementById('kelasPdf').value;
         if (kelas) {
-            window.open('/laporan/pdf/kelas/' + kelas, '_blank');
+            window.open('/laporan/pdf/kelas/' + encodeURIComponent(kelas), '_blank');
         }
     }
 
     function eksporExcel() {
         const kelas = document.getElementById('kelasExcel').value;
-        const url = kelas ? '/laporan/excel?kelas=' + kelas : '/laporan/excel';
+        const url = kelas ? '/laporan/excel?kelas=' + encodeURIComponent(kelas) : '/laporan/excel';
         window.location.href = url;
     }
 </script>
