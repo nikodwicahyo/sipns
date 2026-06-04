@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Laporan - SIPNS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-file-earmark-pdf"></i> Laporan & Ekspor</h3>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Cetak PDF Rekap Kelas</h5></div>
+            <div class="card-body">
+                <p class="text-muted">Generate laporan rekap nilai seluruh siswa dalam satu kelas.</p>
+                <div class="mb-3">
+                    <label class="form-label">Pilih Kelas</label>
+                    <select class="form-select" id="kelasPdf">
+                        <option value="">-- Pilih Kelas --</option>
+                        {% for k in kelas_list %}
+                        <option value="{{ k }}">{{ k }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="cetakPdf()" id="btnCetakPdf" disabled>
+                    <i class="bi bi-file-earmark-pdf"></i> Cetak PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Ekspor Excel</h5></div>
+            <div class="card-body">
+                <p class="text-muted">Download data nilai dalam format Excel (.xlsx).</p>
+                <div class="mb-3">
+                    <label class="form-label">Filter Kelas (Opsional)</label>
+                    <select class="form-select" id="kelasExcel">
+                        <option value="">-- Semua Kelas --</option>
+                        {% for k in kelas_list %}
+                        <option value="{{ k }}">{{ k }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="btn btn-success" onclick="eksporExcel()">
+                    <i class="bi bi-file-earmark-excel"></i> Download Excel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    document.getElementById('kelasPdf').addEventListener('change', function() {
+        document.getElementById('btnCetakPdf').disabled = !this.value;
+    });
+
+    function cetakPdf() {
+        const kelas = document.getElementById('kelasPdf').value;
+        if (kelas) {
+            window.open('/laporan/pdf/kelas/' + kelas, '_blank');
+        }
+    }
+
+    function eksporExcel() {
+        const kelas = document.getElementById('kelasExcel').value;
+        const url = kelas ? '/laporan/excel?kelas=' + kelas : '/laporan/excel';
+        window.location.href = url;
+    }
+</script>
+{% endblock %}

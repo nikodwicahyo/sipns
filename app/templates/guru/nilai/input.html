@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Input Nilai - SIPNS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-pencil-square"></i> Input Nilai {{ guru.mata_pelajaran }}</h3>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="formNilai">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">Kelas</label>
+                        <select class="form-select" id="kelasSelect" onchange="loadSiswa()">
+                            <option value="">-- Pilih Kelas --</option>
+                            {% for k in kelas_list %}
+                            <option value="{{ k }}">{{ k }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Siswa</label>
+                        {{ form.siswa_id(class='form-select' + (' is-invalid' if form.siswa_id.errors else ''), id='siswaSelect') }}
+                        {% for error in form.siswa_id.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mata Pelajaran</label>
+                        <input type="text" class="form-control" value="{{ guru.mata_pelajaran }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nilai Tugas (0-100)</label>
+                        {{ form.nilai_tugas(class='form-control nilai-input' + (' is-invalid' if form.nilai_tugas.errors else ''), id='nilaiTugas', oninput='previewNilai()') }}
+                        {% for error in form.nilai_tugas.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nilai UTS (0-100)</label>
+                        {{ form.nilai_uts(class='form-control nilai-input' + (' is-invalid' if form.nilai_uts.errors else ''), id='nilaiUTS', oninput='previewNilai()') }}
+                        {% for error in form.nilai_uts.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nilai UAS (0-100)</label>
+                        {{ form.nilai_uas(class='form-control nilai-input' + (' is-invalid' if form.nilai_uas.errors else ''), id='nilaiUAS', oninput='previewNilai()') }}
+                        {% for error in form.nilai_uas.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div id="previewArea" class="alert alert-info d-none">
+                        <strong>Preview Nilai Akhir:</strong>
+                        <span id="nilaiAkhirPreview">0</span>
+                        <span id="statusPreview"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class='btn btn-primary') }}
+                        <a href="{{ url_for('guru.dashboard') }}" class="btn btn-secondary">Batal</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/nilai-preview.js') }}"></script>
+<script>
+    function loadSiswa() {
+        const kelas = document.getElementById('kelasSelect').value;
+        const select = document.getElementById('siswaSelect');
+        select.innerHTML = '<option value="">-- Pilih Siswa --</option>';
+        if (kelas) {
+            fetch('/admin/api/siswa-by-kelas/' + kelas)
+                .then(r => r.json())
+                .then(data => {
+                    data.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.nis + ' - ' + s.nama;
+                        select.appendChild(opt);
+                    });
+                });
+        }
+    }
+
+    function previewNilai() {
+        const tugas = parseFloat(document.getElementById('nilaiTugas').value) || 0;
+        const uts = parseFloat(document.getElementById('nilaiUTS').value) || 0;
+        const uas = parseFloat(document.getElementById('nilaiUAS').value) || 0;
+
+        const preview = document.getElementById('previewArea');
+        const nilaiSpan = document.getElementById('nilaiAkhirPreview');
+        const statusSpan = document.getElementById('statusPreview');
+
+        if (tugas || uts || uas) {
+            const hasil = hitungNilaiAkhir(tugas, uts, uas);
+            preview.classList.remove('d-none');
+            nilaiSpan.textContent = hasil.toFixed(2);
+
+            if (hasil >= 70) {
+                statusSpan.innerHTML = ' <span class="badge bg-success">LULUS</span>';
+            } else {
+                statusSpan.innerHTML = ' <span class="badge bg-danger">TIDAK LULUS</span>';
+            }
+        } else {
+            preview.classList.add('d-none');
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+<div class="d-flex flex-column pt-3">
+    <ul class="nav nav-pills flex-column">
+        {% if current_user.is_admin() %}
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint and 'siswa' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.daftar_siswa') }}">
+                <i class="bi bi-people"></i> Data Siswa
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint and 'guru' in request.endpoint %}active{% endif %}" href="{{ url_for('admin.daftar_guru') }}">
+                <i class="bi bi-person-badge"></i> Data Guru
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'admin.daftar_user' %}active{% endif %}" href="{{ url_for('admin.daftar_user') }}">
+                <i class="bi bi-shield-lock"></i> Manajemen User
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'admin.audit_log' %}active{% endif %}" href="{{ url_for('admin.audit_log') }}">
+                <i class="bi bi-journal-text"></i> Audit Log
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint and 'laporan' in request.endpoint %}active{% endif %}" href="{{ url_for('laporan.index') }}">
+                <i class="bi bi-file-earmark-pdf"></i> Laporan
+            </a>
+        </li>
+        {% elif current_user.is_guru() %}
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'guru.dashboard' %}active{% endif %}" href="{{ url_for('guru.dashboard') }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'guru.input_nilai' %}active{% endif %}" href="{{ url_for('guru.input_nilai') }}">
+                <i class="bi bi-pencil-square"></i> Input Nilai
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'guru.rekap_nilai' %}active{% endif %}" href="{{ url_for('guru.rekap_nilai') }}">
+                <i class="bi bi-table"></i> Rekap Nilai
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('laporan.index') }}">
+                <i class="bi bi-file-earmark-pdf"></i> Laporan
+            </a>
+        </li>
+        {% elif current_user.is_siswa() %}
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'siswa.dashboard' %}active{% endif %}" href="{{ url_for('siswa.dashboard') }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'siswa.nilai_saya' %}active{% endif %}" href="{{ url_for('siswa.nilai_saya') }}">
+                <i class="bi bi-file-text"></i> Nilai Saya
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</div>

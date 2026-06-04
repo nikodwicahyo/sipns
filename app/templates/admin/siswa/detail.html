@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Detail Siswa - SIPNS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-person"></i> Detail Siswa: {{ siswa.nama }}</h3>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <h5>Informasi Siswa</h5>
+                <table class="table table-sm">
+                    <tr><td>NIS</td><td><strong>{{ siswa.nis }}</strong></td></tr>
+                    <tr><td>Nama</td><td><strong>{{ siswa.nama }}</strong></td></tr>
+                    <tr><td>Kelas</td><td><strong>{{ siswa.kelas }}</strong></td></tr>
+                    <tr><td>Tanggal Daftar</td><td>{{ siswa.created_at.strftime('%d/%m/%Y') if siswa.created_at else '-' }}</td></tr>
+                </table>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('admin.edit_siswa', id=siswa.id) }}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <a href="{{ url_for('laporan.pdf_transkrip', siswa_id=siswa.id) }}" class="btn btn-info btn-sm">
+                        <i class="bi bi-file-earmark-pdf"></i> Cetak Transkrip
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header"><h5>Riwayat Nilai</h5></div>
+            <div class="card-body">
+                <table class="table datatable">
+                    <thead>
+                        <tr>
+                            <th>Mata Pelajaran</th>
+                            <th>Tugas</th>
+                            <th>UTS</th>
+                            <th>UAS</th>
+                            <th>Nilai Akhir</th>
+                            <th>Status</th>
+                            <th>Dikunci</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for n in nilai_list %}
+                        <tr>
+                            <td>{{ n.mata_pelajaran }}</td>
+                            <td>{{ n.nilai_tugas }}</td>
+                            <td>{{ n.nilai_uts }}</td>
+                            <td>{{ n.nilai_uas }}</td>
+                            <td>{{ n.nilai_akhir if n.nilai_akhir else '-' }}</td>
+                            <td>
+                                {% if n.status_lulus is not none %}
+                                    <span class="badge {% if n.status_lulus %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ 'Lulus' if n.status_lulus else 'Tidak Lulus' }}
+                                    </span>
+                                {% else %}<span class="badge bg-secondary">-</span>{% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if n.is_locked %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ 'Terkunci' if n.is_locked else 'Terbuka' }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

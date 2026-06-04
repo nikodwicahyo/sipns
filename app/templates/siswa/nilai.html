@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Nilai Saya - SIPNS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-file-text"></i> Nilai Saya</h3>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Data Siswa: {{ siswa.nama }} ({{ siswa.nis }}) - {{ siswa.kelas }}</h5>
+    </div>
+    <div class="card-body">
+        <table class="table datatable" id="nilaiTable">
+            <thead>
+                <tr>
+                    <th>Mata Pelajaran</th>
+                    <th>Tugas</th>
+                    <th>UTS</th>
+                    <th>UAS</th>
+                    <th>Nilai Akhir</th>
+                    <th>Status</th>
+                    <th>Detail</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in nilai_list %}
+                <tr>
+                    <td>{{ n.mata_pelajaran }}</td>
+                    <td>{{ n.nilai_tugas }}</td>
+                    <td>{{ n.nilai_uts }}</td>
+                    <td>{{ n.nilai_uas }}</td>
+                    <td><strong>{{ n.nilai_akhir if n.nilai_akhir else '-' }}</strong></td>
+                    <td>
+                        {% if n.status_lulus is not none %}
+                            <span class="badge {% if n.status_lulus %}bg-success{% else %}bg-danger{% endif %}" style="font-size:0.9rem;">
+                                {{ 'Lulus' if n.status_lulus else 'Tidak Lulus' }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('siswa.detail_nilai', nilai_id=n.id) }}" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-calculator"></i> Rincian
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% set ns = namespace(total=0, count=0) %}
+{% for n in nilai_list %}
+    {% if n.nilai_akhir is not none %}
+        {% set ns.total = ns.total + n.nilai_akhir|float %}
+        {% set ns.count = ns.count + 1 %}
+    {% endif %}
+{% endfor %}
+
+<div class="card">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>Rata-rata Nilai Akhir: <strong>{{ (ns.total / ns.count)|round(2) if ns.count > 0 else 0 }}</strong></h5>
+            </div>
+            <div class="col-md-6 text-end">
+                {% if ns.count > 0 %}
+                    {% set global_status = 'Lulus' if nilai_list|selectattr('status_lulus')|list|length == ns.count else 'Tidak Lulus' %}
+                    <h4>
+                        Status Global:
+                        <span class="badge {% if global_status == 'Lulus' %}bg-success{% else %}bg-danger{% endif %}" style="font-size:1.2rem;">
+                            {{ global_status }}
+                        </span>
+                    </h4>
+                {% else %}
+                    <h4>Status: <span class="badge bg-secondary">Belum Ada Nilai</span></h4>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#nilaiTable').DataTable({
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json' },
+            paging: false
+        });
+    });
+</script>
+{% endblock %}

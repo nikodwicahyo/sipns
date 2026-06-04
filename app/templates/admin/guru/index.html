@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Data Guru - SIPNS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-person-badge"></i> Data Guru</h3>
+    <a href="{{ url_for('admin.tambah_guru') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Tambah Guru
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-striped datatable" id="guruTable">
+            <thead>
+                <tr>
+                    <th>ID Guru</th>
+                    <th>Nama</th>
+                    <th>Mata Pelajaran</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in guru_list %}
+                <tr>
+                    <td>{{ g.id_guru }}</td>
+                    <td>{{ g.nama_guru }}</td>
+                    <td>{{ g.mata_pelajaran }}</td>
+                    <td>
+                        <a href="{{ url_for('admin.edit_guru', id=g.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger" onclick="confirmHapus('{{ url_for('admin.hapus_guru', id=g.id) }}', '{{ g.nama_guru }}')" title="Hapus">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#guruTable').DataTable({
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json' }
+        });
+    });
+</script>
+{% endblock %}

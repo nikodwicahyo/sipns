@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Admin - SIPNS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-speedometer2"></i> Dashboard Admin</h3>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Siswa</h6>
+                        <h2 class="mb-0">{{ total_siswa }}</h2>
+                    </div>
+                    <i class="bi bi-people fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Guru</h6>
+                        <h2 class="mb-0">{{ total_guru }}</h2>
+                    </div>
+                    <i class="bi bi-person-badge fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Nilai</h6>
+                        <h2 class="mb-0">{{ total_nilai }}</h2>
+                    </div>
+                    <i class="bi bi-file-text fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">% Kelulusan</h6>
+                        <h2 class="mb-0">{{ persen_lulus }}%</h2>
+                    </div>
+                    <i class="bi bi-trophy fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Distribusi Nilai Rata-rata per Kelas</h5></div>
+            <div class="card-body">
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Rasio Kelulusan</h5></div>
+            <div class="card-body">
+                <canvas id="doughnutChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h5>Nilai Terbaru</h5></div>
+    <div class="card-body">
+        <table class="table table-striped datatable">
+            <thead>
+                <tr>
+                    <th>Siswa</th>
+                    <th>Mapel</th>
+                    <th>Nilai Akhir</th>
+                    <th>Status</th>
+                    <th>Tanggal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in recent_nilai %}
+                <tr>
+                    <td>{{ n.siswa.nama if n.siswa else '-' }}</td>
+                    <td>{{ n.mata_pelajaran }}</td>
+                    <td>{{ n.nilai_akhir }}</td>
+                    <td>
+                        {% if n.status_lulus is not none %}
+                            <span class="badge {% if n.status_lulus %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ 'Lulus' if n.status_lulus else 'Tidak Lulus' }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ n.created_at.strftime('%d/%m/%Y %H:%M') if n.created_at else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    const barLabels = {{ chart_labels | tojson }};
+    const barData = {{ chart_data | tojson }};
+    renderBarChart('barChart', barLabels, barData);
+
+    const lulus = {{ total_lulus }};
+    const tidakLulus = {{ total_tidak_lulus }};
+    renderDoughnutChart('doughnutChart', lulus, tidakLulus);
+</script>
+{% endblock %}

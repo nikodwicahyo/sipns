@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Data Siswa - SIPNS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-people"></i> Data Siswa</h3>
+    <a href="{{ url_for('admin.tambah_siswa') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Tambah Siswa
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-striped datatable" id="siswaTable">
+            <thead>
+                <tr>
+                    <th>NIS</th>
+                    <th>Nama</th>
+                    <th>Kelas</th>
+                    <th>Rata-rata</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in siswa_list %}
+                <tr>
+                    <td>{{ s.nis }}</td>
+                    <td>{{ s.nama }}</td>
+                    <td>{{ s.kelas }}</td>
+                    <td>{{ s.rata_rata_nilai() }}</td>
+                    <td>
+                        {% set status = s.status_kelulusan_global() %}
+                        {% if status == 'Lulus' %}
+                            <span class="badge bg-success">Lulus</span>
+                        {% elif status == 'Tidak Lulus' %}
+                            <span class="badge bg-danger">Tidak Lulus</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Belum Ada Nilai</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.detail_siswa', id=s.id) }}" class="btn btn-sm btn-outline-secondary" title="Detail">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{{ url_for('admin.edit_siswa', id=s.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger" onclick="confirmHapus('{{ url_for('admin.hapus_siswa', id=s.id) }}', '{{ s.nama }}')" title="Hapus">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#siswaTable').DataTable({
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json' }
+        });
+    });
+</script>
+{% endblock %}

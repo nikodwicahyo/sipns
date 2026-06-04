@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Guru - SIPNS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-speedometer2"></i> Dashboard Guru</h3>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-bg-primary">
+            <div class="card-body">
+                <h6>Mata Pelajaran</h6>
+                <h4>{{ mata_pelajaran }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <h6>Jumlah Siswa</h6>
+                <h4>{{ total_siswa }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-bg-info">
+            <div class="card-body">
+                <h6>Kelas Diampu</h6>
+                <h4>{{ kelas_list | length }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Aksi Cepat</h5>
+    </div>
+    <div class="card-body">
+        <a href="{{ url_for('guru.input_nilai') }}" class="btn btn-primary me-2">
+            <i class="bi bi-pencil-square"></i> Input Nilai Baru
+        </a>
+        <a href="{{ url_for('guru.rekap_nilai') }}" class="btn btn-secondary">
+            <i class="bi bi-table"></i> Lihat Rekap
+        </a>
+    </div>
+</div>
+{% endblock %}

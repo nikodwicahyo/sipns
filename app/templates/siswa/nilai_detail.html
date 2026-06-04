@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Detail Nilai - SIPNS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-calculator"></i> Rincian Kalkulasi Nilai</h3>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ nilai.mata_pelajaran }}</h5>
+
+                <table class="table table-bordered">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Komponen</th>
+                            <th>Nilai</th>
+                            <th>Bobot</th>
+                            <th>Kontribusi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tugas</td>
+                            <td>{{ detail.tugas.nilai }}</td>
+                            <td>{{ detail.tugas.bobot }}%</td>
+                            <td><strong>{{ detail.tugas.kontribusi }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>UTS</td>
+                            <td>{{ detail.uts.nilai }}</td>
+                            <td>{{ detail.uts.bobot }}%</td>
+                            <td><strong>{{ detail.uts.kontribusi }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>UAS</td>
+                            <td>{{ detail.uas.nilai }}</td>
+                            <td>{{ detail.uas.bobot }}%</td>
+                            <td><strong>{{ detail.uas.kontribusi }}</strong></td>
+                        </tr>
+                        <tr class="table-success">
+                            <td colspan="3"><strong>Nilai Akhir</strong></td>
+                            <td><strong>{{ detail.nilai_akhir }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="text-center mt-3">
+                    <strong>Status:</strong>
+                    {% if detail.status_lulus %}
+                        <span class="badge bg-success fs-5">LULUS</span>
+                    {% else %}
+                        <span class="badge bg-danger fs-5">TIDAK LULUS</span>
+                    {% endif %}
+                    <p class="text-muted mt-2">KKM: {{ detail.kkm }}</p>
+                </div>
+
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('siswa.nilai_saya') }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Kembali
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

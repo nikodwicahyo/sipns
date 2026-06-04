@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Transkrip Nilai - {{ siswa.nama }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 11pt;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 1cm;
+            border-bottom: 3px solid #0d6efd;
+            padding-bottom: 0.5cm;
+        }
+        .header h2 {
+            margin: 0;
+            color: #0d6efd;
+            font-size: 16pt;
+        }
+        .info-siswa {
+            margin: 0.5cm 0;
+        }
+        .info-siswa table {
+            width: 100%;
+            border: none;
+        }
+        .info-siswa td {
+            border: none;
+            padding: 3px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0.5cm 0;
+        }
+        th {
+            background-color: #0d6efd;
+            color: white;
+            padding: 8px 6px;
+            text-align: center;
+            font-size: 10pt;
+        }
+        td {
+            padding: 6px;
+            border: 1px solid #ddd;
+            text-align: center;
+            font-size: 10pt;
+        }
+        .status-box {
+            text-align: center;
+            padding: 0.5cm;
+            margin: 0.5cm 0;
+            border: 2px solid #198754;
+            border-radius: 10px;
+        }
+        .status-box.lulus {
+            background-color: #d1e7dd;
+            border-color: #198754;
+        }
+        .status-box.tidak-lulus {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+        }
+        .status-box h3 {
+            margin: 0;
+        }
+        .signature {
+            margin-top: 2cm;
+            text-align: right;
+        }
+        .signature div {
+            margin-bottom: 2.5cm;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>TRANSKRIP NILAI SISWA</h2>
+        <p>SIPNS - Sistem Informasi Pengolahan Nilai Siswa</p>
+    </div>
+
+    <div class="info-siswa">
+        <table>
+            <tr><td><strong>NIS</strong></td><td>: {{ siswa.nis }}</td></tr>
+            <tr><td><strong>Nama</strong></td><td>: {{ siswa.nama }}</td></tr>
+            <tr><td><strong>Kelas</strong></td><td>: {{ siswa.kelas }}</td></tr>
+        </table>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Mata Pelajaran</th>
+                <th>Tugas</th>
+                <th>UTS</th>
+                <th>UAS</th>
+                <th>Nilai Akhir</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for n in data %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td style="text-align:left;">{{ n.mata_pelajaran }}</td>
+                <td>{{ n.nilai_tugas }}</td>
+                <td>{{ n.nilai_uts }}</td>
+                <td>{{ n.nilai_uas }}</td>
+                <td><strong>{{ n.nilai_akhir }}</strong></td>
+                <td style="color: {{ 'green' if n.status_lulus else 'red' }}; font-weight:bold;">
+                    {{ 'Lulus' if n.status_lulus else 'Tidak Lulus' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% set ns = namespace(all=true, any=false) %}
+    {% for n in data %}
+        {% if n.status_lulus == false %}{% set ns.all = false %}{% endif %}
+        {% if n.status_lulus == true %}{% set ns.any = true %}{% endif %}
+    {% endfor %}
+
+    <div class="status-box {% if ns.all and ns.any %}lulus{% elif not ns.all %}tidak-lulus{% endif %}">
+        <h3>
+            STATUS KELULUSAN:
+            {% if ns.all and ns.any %}
+                LULUS
+            {% elif not data %}
+                BELUM ADA NILAI
+            {% else %}
+                TIDAK LULUS
+            {% endif %}
+        </h3>
+    </div>
+
+    <div class="signature">
+        <div>
+            <p>Mengetahui,</p>
+            <p>Kepala Sekolah</p>
+            <br><br><br>
+            <p>(________________________)</p>
+        </div>
+    </div>
+</body>
+</html>

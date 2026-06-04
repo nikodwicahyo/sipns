@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Manajemen User - SIPNS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-shield-lock"></i> Manajemen User</h3>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table datatable" id="userTable">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Terkait</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.username }}</td>
+                    <td>
+                        {% if u.is_admin() %}<span class="badge bg-secondary">Admin</span>
+                        {% elif u.is_guru() %}<span class="badge bg-primary">Guru</span>
+                        {% else %}<span class="badge bg-success">Siswa</span>{% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if u.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ 'Aktif' if u.is_active else 'Nonaktif' }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if u.siswa %}{{ u.siswa.nama }}{% elif u.guru %}{{ u.guru.nama_guru }}{% else %}-{% endif %}
+                    </td>
+                    <td>
+                        <form action="{{ url_for('admin.toggle_aktif_user', id=u.id) }}" method="POST" class="d-inline">
+                            <button class="btn btn-sm btn-outline-{{ 'warning' if u.is_active else 'success' }}"
+                                    onclick="return confirm('{{ 'Nonaktifkan' if u.is_active else 'Aktifkan' }} user {{ u.username }}?')">
+                                <i class="bi bi-{{ 'pause-circle' if u.is_active else 'play-circle' }}"></i>
+                            </button>
+                        </form>
+                        <a href="{{ url_for('admin.reset_password_user', id=u.id) }}" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-key"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#userTable').DataTable({
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json' }
+        });
+    });
+</script>
+{% endblock %}

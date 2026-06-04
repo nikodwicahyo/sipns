@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - SIPNS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-person-plus"></i> {{ title }}</h3>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label class="form-label">NIS</label>
+                        {{ form.nis(class='form-control' + (' is-invalid' if form.nis.errors else ''), **({'disabled': True} if siswa else {})) }}
+                        {% for error in form.nis.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Lengkap</label>
+                        {{ form.nama(class='form-control' + (' is-invalid' if form.nama.errors else '')) }}
+                        {% for error in form.nama.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Kelas</label>
+                        {{ form.kelas(class='form-control' + (' is-invalid' if form.kelas.errors else '')) }}
+                        {% for error in form.kelas.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class='btn btn-primary') }}
+                        <a href="{{ url_for('admin.daftar_siswa') }}" class="btn btn-secondary">Batal</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

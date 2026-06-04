@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Rekap Nilai - SIPNS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-table"></i> Rekap Nilai {{ guru.mata_pelajaran }}</h3>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-bg-primary">
+            <div class="card-body">
+                <h6>Rata-rata</h6>
+                <h4>{{ statistik.rata_rata }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <h6>Tertinggi</h6>
+                <h4>{{ statistik.tertinggi }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-warning">
+            <div class="card-body">
+                <h6>Terendah</h6>
+                <h4>{{ statistik.terendah }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-info">
+            <div class="card-body">
+                <h6>% Lulus</h6>
+                <h4>{{ statistik.persen_lulus }}%</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-striped datatable" id="rekapTable">
+            <thead>
+                <tr>
+                    <th>NIS</th>
+                    <th>Nama</th>
+                    <th>Kelas</th>
+                    <th>Tugas</th>
+                    <th>UTS</th>
+                    <th>UAS</th>
+                    <th>Nilai Akhir</th>
+                    <th>Status</th>
+                    <th>Kunci</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in data_nilai %}
+                <tr>
+                    <td>{{ n.siswa.nis if n.siswa else '-' }}</td>
+                    <td>{{ n.siswa.nama if n.siswa else '-' }}</td>
+                    <td>{{ n.siswa.kelas if n.siswa else '-' }}</td>
+                    <td>{{ n.nilai_tugas }}</td>
+                    <td>{{ n.nilai_uts }}</td>
+                    <td>{{ n.nilai_uas }}</td>
+                    <td><strong>{{ n.nilai_akhir }}</strong></td>
+                    <td>
+                        {% if n.status_lulus is not none %}
+                            <span class="badge {% if n.status_lulus %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ 'Lulus' if n.status_lulus else 'Tidak Lulus' }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge {% if n.is_locked %}bg-success{% else %}bg-warning{% endif %}">
+                            {{ 'Terkunci' if n.is_locked else 'Terbuka' }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if not n.is_locked %}
+                        <a href="{{ url_for('guru.edit_nilai', id=n.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="{{ url_for('guru.kunci_nilai', id=n.id) }}" method="POST" class="d-inline"
+                              onsubmit="return confirm('Kunci nilai ini? Nilai tidak dapat diubah setelah dikunci.')">
+                            <button class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-lock"></i>
+                            </button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted"><i class="bi bi-lock-fill"></i> Terkunci</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#rekapTable').DataTable({
+            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json' }
+        });
+    });
+</script>
+{% endblock %}
