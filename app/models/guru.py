@@ -23,6 +23,7 @@ class Guru(db.Model):
 
     def get_siswa_diajar(self):
         from app.models.siswa import Siswa
+        from app.models.nilai import Nilai
         siswa_ids = db.session.query(Nilai.siswa_id).filter_by(
             guru_id=self.id
         ).distinct().all()

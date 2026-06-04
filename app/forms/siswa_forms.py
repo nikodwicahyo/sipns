@@ -22,6 +22,10 @@ class SiswaForm(FlaskForm):
 
     def validate_nis(self, field):
         from wtforms import ValidationError
+        from app.models import User
         existing = Siswa.cari_by_nis(field.data)
         if existing and (not self.id.data or existing.id != int(self.id.data)):
             raise ValidationError('NIS sudah terdaftar.')
+        user = User.query.filter_by(username=field.data).first()
+        if user and user.siswa_id and (not self.id.data or user.siswa_id != int(self.id.data)):
+            raise ValidationError('Username sudah terdaftar di sistem.')

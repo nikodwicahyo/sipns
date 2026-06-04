@@ -32,7 +32,7 @@ def dashboard():
     chart_labels = []
     chart_data = []
     for kelas in kelas_list:
-        data_nilai = Nilai.query.join(Siswa).filter(
+        data_nilai = Nilai.query.join(Siswa, Nilai.siswa_id == Siswa.id).filter(
             Siswa.kelas == kelas, Siswa.deleted_at.is_(None)
         ).all()
         stat = hitung_statistik_kelas(data_nilai)
@@ -65,26 +65,33 @@ def daftar_siswa():
 def tambah_siswa():
     form = SiswaForm()
     if form.validate_on_submit():
-        siswa = Siswa(nis=form.nis.data, nama=form.nama.data, kelas=form.kelas.data)
-        db.session.add(siswa)
-        db.session.flush()
+        try:
+            siswa = Siswa(nis=form.nis.data, nama=form.nama.data, kelas=form.kelas.data)
+            db.session.add(siswa)
+            db.session.flush()
 
-        user = User(username=form.nis.data, role='siswa', siswa_id=siswa.id)
-        user.set_password(form.nis.data)
-        db.session.add(user)
-        db.session.commit()
+            user = User(username=form.nis.data, role='siswa', siswa_id=siswa.id)
+            user.set_password(form.nis.data)
+            db.session.add(user)
+            db.session.commit()
 
-        catat_audit_log(
-            user_id=current_user.id,
-            action='INSERT',
-            table_name='siswa',
-            record_id=siswa.id,
-            description=f'Tambah siswa {siswa.nama} (NIS: {siswa.nis})',
-            ip_address=request.remote_addr,
-        )
-        flash(f'Siswa {siswa.nama} berhasil ditambahkan.', 'success')
-        flash(f'Default login — Username: {user.username}, Password: {form.nis.data}', 'info')
-        return redirect(url_for('admin.daftar_siswa'))
+            catat_audit_log(
+                user_id=current_user.id,
+                action='INSERT',
+                table_name='siswa',
+                record_id=siswa.id,
+                description=f'Tambah siswa {siswa.nama} (NIS: {siswa.nis})',
+                ip_address=request.remote_addr,
+            )
+            flash(f'Siswa {siswa.nama} berhasil ditambahkan.', 'success')
+            flash(f'Default login — Username: {user.username}, Password: {form.nis.data}', 'info')
+            return redirect(url_for('admin.daftar_siswa'))
+        except Exception as e:
+            db.session.rollback()
+            import logging
+            logging.exception('Gagal menambah siswa')
+            flash(f'Gagal menambah siswa: {str(e)}', 'error')
+            return redirect(url_for('admin.daftar_siswa'))
 
     return render_template('admin/siswa/form.html', form=form, title='Tambah Siswa')
 
@@ -160,30 +167,37 @@ def daftar_guru():
 def tambah_guru():
     form = GuruForm()
     if form.validate_on_submit():
-        guru = Guru(
-            id_guru=form.id_guru.data,
-            nama_guru=form.nama_guru.data,
-            mata_pelajaran=form.mata_pelajaran.data,
-        )
-        db.session.add(guru)
-        db.session.flush()
+        try:
+            guru = Guru(
+                id_guru=form.id_guru.data,
+                nama_guru=form.nama_guru.data,
+                mata_pelajaran=form.mata_pelajaran.data,
+            )
+            db.session.add(guru)
+            db.session.flush()
 
-        user = User(username=form.id_guru.data, role='guru', guru_id=guru.id)
-        user.set_password(form.id_guru.data)
-        db.session.add(user)
-        db.session.commit()
+            user = User(username=form.id_guru.data, role='guru', guru_id=guru.id)
+            user.set_password(form.id_guru.data)
+            db.session.add(user)
+            db.session.commit()
 
-        catat_audit_log(
-            user_id=current_user.id,
-            action='INSERT',
-            table_name='guru',
-            record_id=guru.id,
-            description=f'Tambah guru {guru.nama_guru} ({guru.mata_pelajaran})',
-            ip_address=request.remote_addr,
-        )
-        flash(f'Guru {guru.nama_guru} berhasil ditambahkan.', 'success')
-        flash(f'Default login — Username: {user.username}, Password: {form.id_guru.data}', 'info')
-        return redirect(url_for('admin.daftar_guru'))
+            catat_audit_log(
+                user_id=current_user.id,
+                action='INSERT',
+                table_name='guru',
+                record_id=guru.id,
+                description=f'Tambah guru {guru.nama_guru} ({guru.mata_pelajaran})',
+                ip_address=request.remote_addr,
+            )
+            flash(f'Guru {guru.nama_guru} berhasil ditambahkan.', 'success')
+            flash(f'Default login — Username: {user.username}, Password: {form.id_guru.data}', 'info')
+            return redirect(url_for('admin.daftar_guru'))
+        except Exception as e:
+            db.session.rollback()
+            import logging
+            logging.exception('Gagal menambah guru')
+            flash(f'Gagal menambah guru: {str(e)}', 'error')
+            return redirect(url_for('admin.daftar_guru'))
 
     return render_template('admin/guru/form.html', form=form, title='Tambah Guru')
 
