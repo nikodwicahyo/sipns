@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Health Check - SIPNS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h3><i class="bi bi-heart-pulse"></i> Health Check</h3>
+    <button class="btn btn-outline-primary" onclick="location.reload()">
+        <i class="bi bi-arrow-clockwise"></i> Refresh
+    </button>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card {% if healthy %}text-bg-success{% else %}text-bg-danger{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Status</h6>
+                        <h2 class="mb-0">{{ 'Healthy' if healthy else 'Degraded' }}</h2>
+                    </div>
+                    <i class="bi {% if healthy %}bi-check-circle{% else %}bi-exclamation-triangle{% endif %} fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card {% if db_status.status == 'connected' %}text-bg-success{% else %}text-bg-danger{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Database</h6>
+                        <h2 class="mb-0">{{ db_status.status | title }}</h2>
+                    </div>
+                    <i class="bi bi-database fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Response Time</h6>
+                        <h2 class="mb-0">{{ db_status.response_time_ms }} ms</h2>
+                    </div>
+                    <i class="bi bi-lightning fs-1 opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h5><i class="bi bi-info-circle"></i> Detail</h5></div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <th style="width: 200px;">Aplikasi</th>
+                    <td>{{ app_name }}</td>
+                </tr>
+                <tr>
+                    <th>Environment</th>
+                    <td>
+                        <span class="badge {% if flask_env == 'production' %}bg-danger{% elif flask_env == 'development' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ flask_env }}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Timestamp</th>
+                    <td>{{ timestamp.strftime('%d/%m/%Y %H:%M:%S') }} UTC</td>
+                </tr>
+                <tr>
+                    <th>Database Status</th>
+                    <td>
+                        {% if db_status.status == 'connected' %}
+                            <span class="badge bg-success">Connected</span>
+                        {% else %}
+                            <span class="badge bg-danger">Error</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Database Response</th>
+                    <td>{{ db_status.response_time_ms }} ms</td>
+                </tr>
+                {% if db_error %}
+                <tr>
+                    <th>Error Message</th>
+                    <td><code class="text-danger">{{ db_error }}</code></td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

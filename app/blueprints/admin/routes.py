@@ -298,25 +298,27 @@ def audit_log():
 def health_check():
     import time
     start = time.time()
-    status = 'healthy'
-    db_info = {}
+    db_status = {}
+    db_error = None
     try:
         db.session.execute(db.text('SELECT 1'))
         elapsed = round((time.time() - start) * 1000, 2)
-        db_info = {'status': 'connected', 'response_time_ms': elapsed}
+        db_status = {'status': 'connected', 'response_time_ms': elapsed}
     except Exception as e:
-        status = 'degraded'
-        db_info = {'status': 'error', 'message': str(e)}
+        elapsed = round((time.time() - start) * 1000, 2)
+        db_status = {'status': 'error', 'response_time_ms': elapsed}
+        db_error = str(e)
 
-    result = {
-        'status': status,
-        'timestamp': datetime.utcnow().isoformat(),
-        'database': db_info,
-        'app': 'SIPNS',
-        'flask_env': os.environ.get('FLASK_ENV', 'unknown'),
-    }
-    http_code = 200 if status == 'healthy' else 503
-    return jsonify(result), http_code
+    healthy = db_error is None
+
+    return render_template(
+        'admin/health.html',
+        healthy=healthy,
+        db_status=db_status,
+        db_error=db_error,
+        flask_env=os.environ.get('FLASK_ENV', 'unknown'),
+        timestamp=datetime.utcnow(),
+    )
 
 
 # --- API Endpoints ---
