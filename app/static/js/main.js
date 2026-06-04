@@ -48,6 +48,11 @@ function confirmLogout(event) {
     });
 }
 
+function getCSRFToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : '';
+}
+
 function confirmHapus(url, nama) {
     Swal.fire({
         title: 'Hapus ' + nama + '?',
@@ -62,6 +67,11 @@ function confirmHapus(url, nama) {
             var form = document.createElement('form');
             form.method = 'POST';
             form.action = url;
+            var csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = getCSRFToken();
+            form.appendChild(csrfInput);
             document.body.appendChild(form);
             form.submit();
         }

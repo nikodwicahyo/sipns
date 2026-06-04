@@ -88,6 +88,7 @@
                         </a>
                         <form action="{{ url_for('guru.kunci_nilai', id=n.id) }}" method="POST" class="d-inline"
                               onsubmit="return confirm('Kunci nilai ini? Nilai tidak dapat diubah setelah dikunci.')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button class="btn btn-sm btn-outline-success">
                                 <i class="bi bi-lock"></i>
                             </button>
