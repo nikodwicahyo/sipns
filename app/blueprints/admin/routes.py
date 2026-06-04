@@ -83,6 +83,7 @@ def tambah_siswa():
             ip_address=request.remote_addr,
         )
         flash(f'Siswa {siswa.nama} berhasil ditambahkan.', 'success')
+        flash(f'Default login — Username: {user.username}, Password: {form.nis.data}', 'info')
         return redirect(url_for('admin.daftar_siswa'))
 
     return render_template('admin/siswa/form.html', form=form, title='Tambah Siswa')
@@ -181,6 +182,7 @@ def tambah_guru():
             ip_address=request.remote_addr,
         )
         flash(f'Guru {guru.nama_guru} berhasil ditambahkan.', 'success')
+        flash(f'Default login — Username: {user.username}, Password: {form.id_guru.data}', 'info')
         return redirect(url_for('admin.daftar_guru'))
 
     return render_template('admin/guru/form.html', form=form, title='Tambah Guru')
