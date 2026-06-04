@@ -12,7 +12,12 @@ from app.utils.time import now_jakarta
 @laporan_bp.route('/rekap-kelas')
 @login_required
 def index():
-    kelas_list = Siswa.daftar_kelas()
+    kelas_list = [
+        r[0] for r in db.session.query(Siswa.kelas)
+        .join(Nilai, Siswa.id == Nilai.siswa_id)
+        .filter(Siswa.deleted_at.is_(None))
+        .distinct().order_by(Siswa.kelas).all()
+    ]
     return render_template('laporan/index.html', kelas_list=kelas_list)
 
 
@@ -21,6 +26,12 @@ def index():
 def pdf_kelas(kelas):
     if current_user.is_siswa():
         abort(403)
+
+    if not Nilai.query.join(Siswa).filter(
+        Siswa.kelas == kelas, Siswa.deleted_at.is_(None)
+    ).first():
+        flash(f'Tidak ada data nilai untuk kelas {kelas}.', 'warning')
+        return redirect(url_for('laporan.index'))
 
     try:
         pdf_bytes = generate_laporan_pdf(kelas)
@@ -81,6 +92,12 @@ def excel():
         abort(403)
 
     kelas = request.args.get('kelas')
+    if kelas and not Nilai.query.join(Siswa).filter(
+        Siswa.kelas == kelas, Siswa.deleted_at.is_(None)
+    ).first():
+        flash(f'Tidak ada data nilai untuk kelas {kelas}.', 'warning')
+        return redirect(url_for('laporan.index'))
+
     try:
         dicetak_oleh = current_user.username
         if current_user.is_guru() and current_user.guru:
