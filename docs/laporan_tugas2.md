@@ -1,7 +1,7 @@
 # Laporan Tugas 2 — Implementasi Program SIPNS
 
 **Sistem Informasi Pengolahan Nilai Siswa**
-**Versi:** 1.0.0 | **Tahun:** 2025 | **Fase:** 2 (Tugas 2)
+**Versi:** 1.0.0 | **Tahun:** 2026 | **Fase:** 2 (Tugas 2)
 **Referensi:** [PRD.md](../../PRD.md) v1.0.0
 
 ---
@@ -31,6 +31,7 @@ Tugas 2 membahas **implementasi teknis** SIPNS berdasarkan rancangan yang telah 
 - Contoh refactoring kode (sebelum & sesudah) untuk menunjukkan evolusi kualitas
 
 **Konteks:**
+
 - Total baris kode: **~5.800 baris** Python (estimasi)
 - Total file Python: **35 file** (models, services, forms, blueprints, utils, config)
 - Total test: **152 tests** (semua PASSING)
@@ -43,47 +44,47 @@ Tugas 2 membahas **implementasi teknis** SIPNS berdasarkan rancangan yang telah 
 
 ### 2.1 Tabel Dependensi (dari `requirements.txt`)
 
-| Library | Versi | Fungsi | Justifikasi |
-|---------|-------|--------|-------------|
-| **Flask** | 3.1.0 | Web framework utama | Ringan, mature, dokumentasi lengkap |
-| **Flask-Login** | 0.6.3 | Manajemen session user | Standar industri untuk Flask auth |
-| **Flask-WTF** | 1.2.2 | Integrasi WTForms + CSRF | CSRF protection built-in |
-| **Flask-SQLAlchemy** | 3.1.1 | ORM untuk database | Abstraksi DB, query Pythonic |
-| **SQLAlchemy** | 2.0.36 | Core ORM | Dipakai langsung untuk query kompleks |
-| **WTForms** | 3.2.1 | Validasi & rendering form | Validasi server-side yang kuat |
-| **PyMySQL** | 1.1.1 | MySQL driver (pure-Python) | Tidak perlu kompilasi C di Windows |
-| **WeasyPrint** | 61.2 | HTML → PDF generator | CSS Paged Media support |
-| **openpyxl** | 3.1.5 | Generator file Excel (.xlsx) | Standar industri, ringan |
-| **Jinja2** | 3.1.5 | Template engine (built-in) | Renderer HTML dinamis |
-| **Werkzeug** | 3.1.3 | WSGI utility (built-in) | Password hashing, request handling |
-| **pytest** | 8.3.4 | Framework testing | Standar Python untuk unit/integration test |
-| **pytest-flask** | 1.3.0 | Plugin pytest untuk Flask | Test client + fixtures |
-| **python-dotenv** | 1.0.1 | Load .env file | Konfigurasi terpisah dari kode |
-| **cryptography** | 44.0.0 | Dependensi transitif | Untuk secure connection |
+| Library              | Versi  | Fungsi                       | Justifikasi                                |
+| -------------------- | ------ | ---------------------------- | ------------------------------------------ |
+| **Flask**            | 3.1.0  | Web framework utama          | Ringan, mature, dokumentasi lengkap        |
+| **Flask-Login**      | 0.6.3  | Manajemen session user       | Standar industri untuk Flask auth          |
+| **Flask-WTF**        | 1.2.2  | Integrasi WTForms + CSRF     | CSRF protection built-in                   |
+| **Flask-SQLAlchemy** | 3.1.1  | ORM untuk database           | Abstraksi DB, query Pythonic               |
+| **SQLAlchemy**       | 2.0.36 | Core ORM                     | Dipakai langsung untuk query kompleks      |
+| **WTForms**          | 3.2.1  | Validasi & rendering form    | Validasi server-side yang kuat             |
+| **PyMySQL**          | 1.1.1  | MySQL driver (pure-Python)   | Tidak perlu kompilasi C di Windows         |
+| **WeasyPrint**       | 61.2   | HTML → PDF generator         | CSS Paged Media support                    |
+| **openpyxl**         | 3.1.5  | Generator file Excel (.xlsx) | Standar industri, ringan                   |
+| **Jinja2**           | 3.1.5  | Template engine (built-in)   | Renderer HTML dinamis                      |
+| **Werkzeug**         | 3.1.3  | WSGI utility (built-in)      | Password hashing, request handling         |
+| **pytest**           | 8.3.4  | Framework testing            | Standar Python untuk unit/integration test |
+| **pytest-flask**     | 1.3.0  | Plugin pytest untuk Flask    | Test client + fixtures                     |
+| **python-dotenv**    | 1.0.1  | Load .env file               | Konfigurasi terpisah dari kode             |
+| **cryptography**     | 44.0.0 | Dependensi transitif         | Untuk secure connection                    |
 
 ### 2.2 Frontend (CDN)
 
-| Library | Versi | Fungsi | Sumber |
-|---------|-------|--------|--------|
-| **Bootstrap** | 5.3.2 | CSS framework | [getbootstrap.com](https://getbootstrap.com/) |
-| **Bootstrap Icons** | 1.11.3 | Icon set | [icons.getbootstrap.com](https://icons.getbootstrap.com/) |
-| **jQuery** | 3.7.1 | DOM manipulation (DataTables dep) | [jquery.com](https://jquery.com/) |
-| **DataTables** | 2.1.8 | Tabel interaktif (sorting, paging) | [datatables.net](https://datatables.net/) |
-| **Chart.js** | 4.4.4 | Visualisasi chart (bar, doughnut) | [chartjs.org](https://www.chartjs.org/) |
-| **SweetAlert2** | 11.10.5 | Notifikasi popup interaktif | [sweetalert2.github.io](https://sweetalert2.github.io/) |
+| Library             | Versi   | Fungsi                             | Sumber                                                    |
+| ------------------- | ------- | ---------------------------------- | --------------------------------------------------------- |
+| **Bootstrap**       | 5.3.2   | CSS framework                      | [getbootstrap.com](https://getbootstrap.com/)             |
+| **Bootstrap Icons** | 1.11.3  | Icon set                           | [icons.getbootstrap.com](https://icons.getbootstrap.com/) |
+| **jQuery**          | 3.7.1   | DOM manipulation (DataTables dep)  | [jquery.com](https://jquery.com/)                         |
+| **DataTables**      | 2.1.8   | Tabel interaktif (sorting, paging) | [datatables.net](https://datatables.net/)                 |
+| **Chart.js**        | 4.4.4   | Visualisasi chart (bar, doughnut)  | [chartjs.org](https://www.chartjs.org/)                   |
+| **SweetAlert2**     | 11.10.5 | Notifikasi popup interaktif        | [sweetalert2.github.io](https://sweetalert2.github.io/)   |
 
 > 📸 **Bukti screenshot library**: `![Library](screenshots/lib.png)`
 
 ### 2.3 Mengapa Flask dan Bukan Django?
 
-| Aspek | Flask | Django |
-|-------|-------|--------|
-| Kompleksitas | **Mikro-framework** (modular) | Full-stack (monolitik) |
-| ORM | SQLAlchemy (mature, fleksibel) | Django ORM (kaku) |
-| Pembelajaran | Lebih landai | Konvensi ketat |
-| Ukuran komunitas | Besar | Besar |
-| Cocok untuk | API + app kecil-menengah | App besar (CMS, e-commerce) |
-| Kebutuhan SIPNS | ✅ Modular, ringan, mudah | ❌ Overkill |
+| Aspek            | Flask                          | Django                      |
+| ---------------- | ------------------------------ | --------------------------- |
+| Kompleksitas     | **Mikro-framework** (modular)  | Full-stack (monolitik)      |
+| ORM              | SQLAlchemy (mature, fleksibel) | Django ORM (kaku)           |
+| Pembelajaran     | Lebih landai                   | Konvensi ketat              |
+| Ukuran komunitas | Besar                          | Besar                       |
+| Cocok untuk      | API + app kecil-menengah       | App besar (CMS, e-commerce) |
+| Kebutuhan SIPNS  | ✅ Modular, ringan, mudah      | ❌ Overkill                 |
 
 **Kesimpulan:** Flask dipilih karena SIPNS relatif kecil (5 tabel, 3 role) dan membutuhkan fleksibilitas tinggi.
 
@@ -841,37 +842,45 @@ class Siswa(db.Model):
 ```html
 <!DOCTYPE html>
 <html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}SIPNS{% endblock %} - SIPNS</title>
 
     <!-- Bootstrap 5.3 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
 
     <!-- DataTables -->
-    <link href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.css" rel="stylesheet">
+    <link
+      href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.css"
+      rel="stylesheet"
+    />
 
     {% block extra_css %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body>
     {% include 'partials/navbar.html' %}
 
     <main class="container py-4">
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show">
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% endwith %} {% block content %}{% endblock %}
     </main>
 
     <!-- Scripts -->
@@ -884,62 +893,62 @@ class Siswa(db.Model):
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
     {% block extra_js %}{% endblock %}
-</body>
+  </body>
 </html>
 ```
 
 ### 6.2 Contoh Halaman: Login (`app/templates/auth/login.html`)
 
 ```html
-{% extends "base.html" %}
-{% block title %}Login{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Login{% endblock %} {% block content
+%}
 <div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-body p-5">
-                <h2 class="text-center mb-4">
-                    <i class="bi bi-mortarboard-fill text-primary"></i>
-                    SIPNS
-                </h2>
-                <p class="text-center text-muted">Sistem Informasi Pengolahan Nilai Siswa</p>
+  <div class="col-md-5">
+    <div class="card shadow">
+      <div class="card-body p-5">
+        <h2 class="text-center mb-4">
+          <i class="bi bi-mortarboard-fill text-primary"></i>
+          SIPNS
+        </h2>
+        <p class="text-center text-muted">
+          Sistem Informasi Pengolahan Nilai Siswa
+        </p>
 
-                <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
-                    {{ form.hidden_tag() }}  <!-- CSRF token -->
+        <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+          {{ form.hidden_tag() }}
+          <!-- CSRF token -->
 
-                    <div class="mb-3">
-                        {{ form.username.label(class="form-label") }}
-                        {{ form.username(class="form-control form-control-lg",
-                                         placeholder="Username / NIS / ID Guru") }}
-                        {% for err in form.username.errors %}
-                            <small class="text-danger">{{ err }}</small>
-                        {% endfor %}
-                    </div>
+          <div class="mb-3">
+            {{ form.username.label(class="form-label") }} {{
+            form.username(class="form-control form-control-lg",
+            placeholder="Username / NIS / ID Guru") }} {% for err in
+            form.username.errors %}
+            <small class="text-danger">{{ err }}</small>
+            {% endfor %}
+          </div>
 
-                    <div class="mb-3">
-                        {{ form.password.label(class="form-label") }}
-                        {{ form.password(class="form-control form-control-lg",
-                                         placeholder="Password") }}
-                        {% for err in form.password.errors %}
-                            <small class="text-danger">{{ err }}</small>
-                        {% endfor %}
-                    </div>
+          <div class="mb-3">
+            {{ form.password.label(class="form-label") }} {{
+            form.password(class="form-control form-control-lg",
+            placeholder="Password") }} {% for err in form.password.errors %}
+            <small class="text-danger">{{ err }}</small>
+            {% endfor %}
+          </div>
 
-                    <div class="d-grid">
-                        {{ form.submit(class="btn btn-primary btn-lg") }}
-                    </div>
-                </form>
+          <div class="d-grid">
+            {{ form.submit(class="btn btn-primary btn-lg") }}
+          </div>
+        </form>
 
-                <div class="mt-4 text-muted small">
-                    <strong>Akun Default (dev):</strong><br>
-                    Admin: <code>admin</code> / <code>admin123</code><br>
-                    Guru: <code>GR-001</code> / <code>guru123</code><br>
-                    Siswa: <code>2024001</code> / <code>2024001</code>
-                </div>
-            </div>
+        <div class="mt-4 text-muted small">
+          <strong>Akun Default (dev):</strong><br />
+          Admin: <code>admin</code> / <code>admin123</code><br />
+          Guru: <code>GR-001</code> / <code>guru123</code><br />
+          Siswa: <code>2024001</code> / <code>2024001</code>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
 ```
@@ -950,98 +959,108 @@ class Siswa(db.Model):
 
 ```html
 <form method="POST" id="formNilai" action="{{ url_for('guru.input_nilai') }}">
-    {{ form.hidden_tag() }}
+  {{ form.hidden_tag() }}
 
-    <div class="row">
-        <div class="col-md-6">
-            {{ form.siswa_id.label(class="form-label") }}
-            {{ form.siswa_id(class="form-select") }}
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Mata Pelajaran</label>
-            <input type="text" class="form-control" value="{{ current_user.guru.mata_pelajaran }}" readonly>
-        </div>
+  <div class="row">
+    <div class="col-md-6">
+      {{ form.siswa_id.label(class="form-label") }} {{
+      form.siswa_id(class="form-select") }}
     </div>
+    <div class="col-md-6">
+      <label class="form-label">Mata Pelajaran</label>
+      <input
+        type="text"
+        class="form-control"
+        value="{{ current_user.guru.mata_pelajaran }}"
+        readonly
+      />
+    </div>
+  </div>
 
-    <div class="row mt-3">
+  <div class="row mt-3">
+    <div class="col-md-4">
+      {{ form.nilai_tugas.label(class="form-label") }} {{
+      form.nilai_tugas(class="form-control nilai-input", min=0, max=100,
+      step=0.01) }}
+    </div>
+    <div class="col-md-4">
+      {{ form.nilai_uts.label(class="form-label") }} {{
+      form.nilai_uts(class="form-control nilai-input", min=0, max=100,
+      step=0.01) }}
+    </div>
+    <div class="col-md-4">
+      {{ form.nilai_uas.label(class="form-label") }} {{
+      form.nilai_uas(class="form-control nilai-input", min=0, max=100,
+      step=0.01) }}
+    </div>
+  </div>
+
+  <!-- Live Preview -->
+  <div class="card mt-4 bg-light">
+    <div class="card-body">
+      <h6>Preview Kalkulasi</h6>
+      <div class="row text-center">
         <div class="col-md-4">
-            {{ form.nilai_tugas.label(class="form-label") }}
-            {{ form.nilai_tugas(class="form-control nilai-input",
-                                min=0, max=100, step=0.01) }}
+          <small class="text-muted">Nilai Akhir</small>
+          <h3 id="previewNilaiAkhir" class="text-primary">-</h3>
         </div>
         <div class="col-md-4">
-            {{ form.nilai_uts.label(class="form-label") }}
-            {{ form.nilai_uts(class="form-control nilai-input",
-                              min=0, max=100, step=0.01) }}
+          <small class="text-muted">KKM</small>
+          <h3 class="text-muted">70</h3>
         </div>
         <div class="col-md-4">
-            {{ form.nilai_uas.label(class="form-label") }}
-            {{ form.nilai_uas(class="form-control nilai-input",
-                              min=0, max=100, step=0.01) }}
+          <small class="text-muted">Status</small>
+          <h3 id="previewStatus"><span class="badge bg-secondary">-</span></h3>
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Live Preview -->
-    <div class="card mt-4 bg-light">
-        <div class="card-body">
-            <h6>Preview Kalkulasi</h6>
-            <div class="row text-center">
-                <div class="col-md-4">
-                    <small class="text-muted">Nilai Akhir</small>
-                    <h3 id="previewNilaiAkhir" class="text-primary">-</h3>
-                </div>
-                <div class="col-md-4">
-                    <small class="text-muted">KKM</small>
-                    <h3 class="text-muted">70</h3>
-                </div>
-                <div class="col-md-4">
-                    <small class="text-muted">Status</small>
-                    <h3 id="previewStatus"><span class="badge bg-secondary">-</span></h3>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="mt-4 d-flex justify-content-end">
-        <a href="{{ url_for('guru.dashboard') }}" class="btn btn-secondary me-2">Batal</a>
-        {{ form.submit(class="btn btn-primary") }}
-    </div>
+  <div class="mt-4 d-flex justify-content-end">
+    <a href="{{ url_for('guru.dashboard') }}" class="btn btn-secondary me-2"
+      >Batal</a
+    >
+    {{ form.submit(class="btn btn-primary") }}
+  </div>
 </form>
 
 {% block extra_js %}
 <script>
-// Live preview via AJAX
-const inputs = document.querySelectorAll('.nilai-input');
-inputs.forEach(input => {
-    input.addEventListener('input', updatePreview);
-});
+  // Live preview via AJAX
+  const inputs = document.querySelectorAll(".nilai-input");
+  inputs.forEach((input) => {
+    input.addEventListener("input", updatePreview);
+  });
 
-function updatePreview() {
-    const t = parseFloat(document.getElementById('nilai_tugas').value) || 0;
-    const u = parseFloat(document.getElementById('nilai_uts').value) || 0;
-    const a = parseFloat(document.getElementById('nilai_uas').value) || 0;
+  function updatePreview() {
+    const t = parseFloat(document.getElementById("nilai_tugas").value) || 0;
+    const u = parseFloat(document.getElementById("nilai_uts").value) || 0;
+    const a = parseFloat(document.getElementById("nilai_uas").value) || 0;
 
     if (t === 0 && u === 0 && a === 0) {
-        document.getElementById('previewNilaiAkhir').textContent = '-';
-        document.getElementById('previewStatus').innerHTML = '<span class="badge bg-secondary">-</span>';
-        return;
+      document.getElementById("previewNilaiAkhir").textContent = "-";
+      document.getElementById("previewStatus").innerHTML =
+        '<span class="badge bg-secondary">-</span>';
+      return;
     }
 
     // Validasi range
     if (t < 0 || t > 100 || u < 0 || u > 100 || a < 0 || a > 100) {
-        document.getElementById('previewNilaiAkhir').textContent = 'Invalid';
-        document.getElementById('previewStatus').innerHTML = '<span class="badge bg-danger">Invalid</span>';
-        return;
+      document.getElementById("previewNilaiAkhir").textContent = "Invalid";
+      document.getElementById("previewStatus").innerHTML =
+        '<span class="badge bg-danger">Invalid</span>';
+      return;
     }
 
     // Hitung di client
-    const akhir = (0.30 * t + 0.30 * u + 0.40 * a).toFixed(2);
-    const status = akhir >= 70 ? 'LULUS' : 'TIDAK LULUS';
-    const cls = akhir >= 70 ? 'bg-success' : 'bg-danger';
+    const akhir = (0.3 * t + 0.3 * u + 0.4 * a).toFixed(2);
+    const status = akhir >= 70 ? "LULUS" : "TIDAK LULUS";
+    const cls = akhir >= 70 ? "bg-success" : "bg-danger";
 
-    document.getElementById('previewNilaiAkhir').textContent = akhir;
-    document.getElementById('previewStatus').innerHTML = `<span class="badge ${cls}">${status}</span>`;
-}
+    document.getElementById("previewNilaiAkhir").textContent = akhir;
+    document.getElementById("previewStatus").innerHTML =
+      `<span class="badge ${cls}">${status}</span>`;
+  }
 </script>
 {% endblock %}
 ```
@@ -1107,6 +1126,7 @@ def tentukan_status_kelulusan(nilai_akhir, kkm=KKM):
 ```
 
 **Keuntungan:**
+
 - ✅ Single source of truth (KKM, bobot, rentang) di `constants.py`
 - ✅ Perubahan 1 tempat untuk semua aturan bisnis
 - ✅ Self-documenting (BOBOT_TUGAS jelas maknanya)
@@ -1138,6 +1158,7 @@ def log(user_id, action, table_name):
 ```
 
 **Keuntungan:**
+
 - ✅ Bisa diset level (DEBUG/INFO/WARNING/ERROR)
 - ✅ Otomatis muncul timestamp & level
 - ✅ Bisa diarahkan ke file log
@@ -1169,6 +1190,7 @@ def generate_laporan_pdf(kelas):
 ```
 
 **Keuntungan:**
+
 - ✅ Menghindari circular import 100%
 - ✅ Startup time lebih cepat (import ditunda)
 - ✅ Test independence meningkat
@@ -1253,4 +1275,4 @@ def generate_laporan_pdf(kelas):
 
 ---
 
-*Disusun sesuai PRD.md Fase 2. Versi 1.0.0 — 2025.*
+_Disusun sesuai PRD.md Fase 2. Versi 1.0.0 — 2026._

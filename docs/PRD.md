@@ -1,7 +1,9 @@
 # Product Requirements Document (PRD)
+
 ## Sistem Informasi Pengolahan Nilai Siswa (SIPNS)
+
 **Versi:** 1.0.0  
-**Tanggal:** 2025  
+**Tanggal:** 2026  
 **Status:** Draft  
 **Penulis:** Tim Pengembang
 
@@ -44,14 +46,14 @@ Pengelolaan nilai siswa di banyak institusi pendidikan masih dilakukan secara ma
 
 ### 2.2 Tujuan Sistem
 
-| No | Tujuan |
-|----|--------|
-| 1 | Menyimpan dan mengelola data siswa secara terpusat dan aman |
-| 2 | Mengotomasi perhitungan nilai akhir berdasarkan formula baku |
-| 3 | Menentukan status kelulusan siswa secara otomatis |
-| 4 | Menyajikan laporan nilai dalam format yang dapat dicetak (PDF) |
-| 5 | Menerapkan kontrol akses berbasis peran (Role-Based Access Control) |
-| 6 | Mendemonstrasikan implementasi Pemrograman Terstruktur dan OOP |
+| No  | Tujuan                                                              |
+| --- | ------------------------------------------------------------------- |
+| 1   | Menyimpan dan mengelola data siswa secara terpusat dan aman         |
+| 2   | Mengotomasi perhitungan nilai akhir berdasarkan formula baku        |
+| 3   | Menentukan status kelulusan siswa secara otomatis                   |
+| 4   | Menyajikan laporan nilai dalam format yang dapat dicetak (PDF)      |
+| 5   | Menerapkan kontrol akses berbasis peran (Role-Based Access Control) |
+| 6   | Mendemonstrasikan implementasi Pemrograman Terstruktur dan OOP      |
 
 ### 2.3 Sasaran Pengguna
 
@@ -91,39 +93,39 @@ Pengelolaan nilai siswa di banyak institusi pendidikan masih dilakukan secara ma
 
 ### 4.1 Admin
 
-| Kebutuhan | Prioritas |
-|-----------|-----------|
-| Login ke sistem dengan kredensial admin | Wajib |
-| Menambah, melihat, mengubah, menghapus data siswa (CRUD) | Wajib |
-| Menambah, melihat, mengubah, menghapus data guru (CRUD) | Wajib |
-| Mengelola akun pengguna (reset password, aktivasi) | Wajib |
-| Melihat laporan nilai seluruh siswa | Wajib |
-| Mencetak/mengunduh laporan PDF | Wajib |
-| Melihat audit log aktivitas sistem | Penting |
-| Melihat dashboard statistik akademik | Penting |
-| Mengekspor data ke Excel | Penting |
+| Kebutuhan                                                | Prioritas |
+| -------------------------------------------------------- | --------- |
+| Login ke sistem dengan kredensial admin                  | Wajib     |
+| Menambah, melihat, mengubah, menghapus data siswa (CRUD) | Wajib     |
+| Menambah, melihat, mengubah, menghapus data guru (CRUD)  | Wajib     |
+| Mengelola akun pengguna (reset password, aktivasi)       | Wajib     |
+| Melihat laporan nilai seluruh siswa                      | Wajib     |
+| Mencetak/mengunduh laporan PDF                           | Wajib     |
+| Melihat audit log aktivitas sistem                       | Penting   |
+| Melihat dashboard statistik akademik                     | Penting   |
+| Mengekspor data ke Excel                                 | Penting   |
 
 ### 4.2 Guru
 
-| Kebutuhan | Prioritas |
-|-----------|-----------|
-| Login ke sistem dengan kredensial guru | Wajib |
-| Menginput nilai siswa (Tugas, UTS, UAS) sesuai mata pelajaran yang diampu | Wajib |
-| Mengubah nilai siswa sebelum dikunci | Wajib |
-| Melihat rekap nilai seluruh siswa di kelasnya | Wajib |
-| Memvalidasi dan mengunci nilai | Penting |
-| Melihat status kelulusan siswa | Penting |
-| Mencetak rekap nilai kelas | Penting |
+| Kebutuhan                                                                 | Prioritas |
+| ------------------------------------------------------------------------- | --------- |
+| Login ke sistem dengan kredensial guru                                    | Wajib     |
+| Menginput nilai siswa (Tugas, UTS, UAS) sesuai mata pelajaran yang diampu | Wajib     |
+| Mengubah nilai siswa sebelum dikunci                                      | Wajib     |
+| Melihat rekap nilai seluruh siswa di kelasnya                             | Wajib     |
+| Memvalidasi dan mengunci nilai                                            | Penting   |
+| Melihat status kelulusan siswa                                            | Penting   |
+| Mencetak rekap nilai kelas                                                | Penting   |
 
 ### 4.3 Siswa
 
-| Kebutuhan | Prioritas |
-|-----------|-----------|
-| Login ke sistem dengan NIS sebagai username | Wajib |
-| Melihat nilai pribadi (Tugas, UTS, UAS, Nilai Akhir) | Wajib |
-| Melihat status kelulusan pribadi | Wajib |
-| Melihat rincian perhitungan nilai akhir | Penting |
-| Mencetak/mengunduh transkrip nilai pribadi | Opsional |
+| Kebutuhan                                            | Prioritas |
+| ---------------------------------------------------- | --------- |
+| Login ke sistem dengan NIS sebagai username          | Wajib     |
+| Melihat nilai pribadi (Tugas, UTS, UAS, Nilai Akhir) | Wajib     |
+| Melihat status kelulusan pribadi                     | Wajib     |
+| Melihat rincian perhitungan nilai akhir              | Penting   |
+| Mencetak/mengunduh transkrip nilai pribadi           | Opsional  |
 
 ---
 
@@ -131,84 +133,84 @@ Pengelolaan nilai siswa di banyak institusi pendidikan masih dilakukan secara ma
 
 ### 5.1 Modul Autentikasi (AUTH)
 
-| Kode | Fitur | Deskripsi |
-|------|-------|-----------|
-| AUTH-01 | Login | Form login dengan username & password; validasi kredensial; redirect berdasarkan role |
-| AUTH-02 | Logout | Terminasi sesi pengguna yang aman |
-| AUTH-03 | Session Management | Sesi kedaluwarsa setelah 2 jam tidak aktif |
-| AUTH-04 | Password Hashing | Password disimpan dengan Werkzeug `generate_password_hash` (PBKDF2-SHA256) |
-| AUTH-05 | Flash Message | Notifikasi sukses/gagal login menggunakan SweetAlert2 |
+| Kode    | Fitur              | Deskripsi                                                                             |
+| ------- | ------------------ | ------------------------------------------------------------------------------------- |
+| AUTH-01 | Login              | Form login dengan username & password; validasi kredensial; redirect berdasarkan role |
+| AUTH-02 | Logout             | Terminasi sesi pengguna yang aman                                                     |
+| AUTH-03 | Session Management | Sesi kedaluwarsa setelah 2 jam tidak aktif                                            |
+| AUTH-04 | Password Hashing   | Password disimpan dengan Werkzeug `generate_password_hash` (PBKDF2-SHA256)            |
+| AUTH-05 | Flash Message      | Notifikasi sukses/gagal login menggunakan SweetAlert2                                 |
 
 ### 5.2 Modul Manajemen Siswa (SISWA)
 
-| Kode | Fitur | Deskripsi |
-|------|-------|-----------|
-| SISWA-01 | Tambah Siswa | Form input NIS, Nama, Kelas; NIS harus unik |
+| Kode     | Fitur              | Deskripsi                                             |
+| -------- | ------------------ | ----------------------------------------------------- |
+| SISWA-01 | Tambah Siswa       | Form input NIS, Nama, Kelas; NIS harus unik           |
 | SISWA-02 | Lihat Daftar Siswa | Tabel dengan DataTables (sorting, search, pagination) |
-| SISWA-03 | Edit Data Siswa | Ubah nama dan kelas; NIS tidak dapat diubah |
-| SISWA-04 | Hapus Siswa | Soft delete dengan konfirmasi SweetAlert2 |
-| SISWA-05 | Profil Siswa | Halaman detail siswa dengan riwayat nilai |
+| SISWA-03 | Edit Data Siswa    | Ubah nama dan kelas; NIS tidak dapat diubah           |
+| SISWA-04 | Hapus Siswa        | Soft delete dengan konfirmasi SweetAlert2             |
+| SISWA-05 | Profil Siswa       | Halaman detail siswa dengan riwayat nilai             |
 
 ### 5.3 Modul Manajemen Guru (GURU)
 
-| Kode | Fitur | Deskripsi |
-|------|-------|-----------|
-| GURU-01 | Tambah Guru | Form input ID Guru, Nama Guru, Mata Pelajaran |
-| GURU-02 | Lihat Daftar Guru | Tabel DataTables dengan filter mata pelajaran |
-| GURU-03 | Edit Data Guru | Ubah nama dan mata pelajaran |
-| GURU-04 | Hapus Guru | Soft delete dengan validasi ketergantungan data nilai |
+| Kode    | Fitur             | Deskripsi                                             |
+| ------- | ----------------- | ----------------------------------------------------- |
+| GURU-01 | Tambah Guru       | Form input ID Guru, Nama Guru, Mata Pelajaran         |
+| GURU-02 | Lihat Daftar Guru | Tabel DataTables dengan filter mata pelajaran         |
+| GURU-03 | Edit Data Guru    | Ubah nama dan mata pelajaran                          |
+| GURU-04 | Hapus Guru        | Soft delete dengan validasi ketergantungan data nilai |
 
 ### 5.4 Modul Nilai (NILAI)
 
-| Kode | Fitur | Deskripsi |
-|------|-------|-----------|
-| NILAI-01 | Input Nilai | Form input Nilai Tugas, UTS, UAS; rentang valid 0–100 |
-| NILAI-02 | Validasi Nilai | Server-side & client-side validation; nilai di luar rentang ditolak |
-| NILAI-03 | Hitung Nilai Akhir | Otomatis: `(0.30 × Tugas) + (0.30 × UTS) + (0.40 × UAS)` |
-| NILAI-04 | Penentuan Status | Lulus jika Nilai Akhir ≥ 70; Tidak Lulus jika < 70 |
-| NILAI-05 | Edit Nilai | Ubah nilai selama belum dikunci oleh guru |
-| NILAI-06 | Kunci Nilai | Guru mengunci nilai agar tidak dapat diubah kembali |
-| NILAI-07 | Rekap Nilai | Tampilan tabel rekap nilai satu kelas |
+| Kode     | Fitur              | Deskripsi                                                           |
+| -------- | ------------------ | ------------------------------------------------------------------- |
+| NILAI-01 | Input Nilai        | Form input Nilai Tugas, UTS, UAS; rentang valid 0–100               |
+| NILAI-02 | Validasi Nilai     | Server-side & client-side validation; nilai di luar rentang ditolak |
+| NILAI-03 | Hitung Nilai Akhir | Otomatis: `(0.30 × Tugas) + (0.30 × UTS) + (0.40 × UAS)`            |
+| NILAI-04 | Penentuan Status   | Lulus jika Nilai Akhir ≥ 70; Tidak Lulus jika < 70                  |
+| NILAI-05 | Edit Nilai         | Ubah nilai selama belum dikunci oleh guru                           |
+| NILAI-06 | Kunci Nilai        | Guru mengunci nilai agar tidak dapat diubah kembali                 |
+| NILAI-07 | Rekap Nilai        | Tampilan tabel rekap nilai satu kelas                               |
 
 ### 5.5 Modul Laporan (LAPORAN)
 
-| Kode | Fitur | Deskripsi |
-|------|-------|-----------|
-| LAPORAN-01 | Laporan Per Kelas | Cetak/unduh PDF rekap nilai seluruh siswa satu kelas |
-| LAPORAN-02 | Transkrip Siswa | PDF nilai pribadi siswa (1 halaman) |
-| LAPORAN-03 | Ekspor Excel | Ekspor data nilai ke .xlsx menggunakan openpyxl |
-| LAPORAN-04 | Dashboard Chart | Grafik distribusi nilai kelas dengan Chart.js |
-| LAPORAN-05 | Statistik | Rata-rata kelas, nilai tertinggi/terendah, persentase kelulusan |
+| Kode       | Fitur             | Deskripsi                                                       |
+| ---------- | ----------------- | --------------------------------------------------------------- |
+| LAPORAN-01 | Laporan Per Kelas | Cetak/unduh PDF rekap nilai seluruh siswa satu kelas            |
+| LAPORAN-02 | Transkrip Siswa   | PDF nilai pribadi siswa (1 halaman)                             |
+| LAPORAN-03 | Ekspor Excel      | Ekspor data nilai ke .xlsx menggunakan openpyxl                 |
+| LAPORAN-04 | Dashboard Chart   | Grafik distribusi nilai kelas dengan Chart.js                   |
+| LAPORAN-05 | Statistik         | Rata-rata kelas, nilai tertinggi/terendah, persentase kelulusan |
 
 ### 5.6 Modul Dashboard
 
-| Kode | Fitur | Deskripsi |
-|------|-------|-----------|
+| Kode    | Fitur           | Deskripsi                                                            |
+| ------- | --------------- | -------------------------------------------------------------------- |
 | DASH-01 | Dashboard Admin | Ringkasan: total siswa, guru, persentase kelulusan, chart distribusi |
-| DASH-02 | Dashboard Guru | Rekap kelas yang diampu, status input nilai |
-| DASH-03 | Dashboard Siswa | Nilai pribadi, status kelulusan, grafik nilai per komponen |
+| DASH-02 | Dashboard Guru  | Rekap kelas yang diampu, status input nilai                          |
+| DASH-03 | Dashboard Siswa | Nilai pribadi, status kelulusan, grafik nilai per komponen           |
 
 ### 5.7 Modul Audit Log
 
-| Kode | Fitur | Deskripsi |
-|------|-------|-----------|
+| Kode     | Fitur         | Deskripsi                                                     |
+| -------- | ------------- | ------------------------------------------------------------- |
 | AUDIT-01 | Log Aktivitas | Catat semua aksi CRUD beserta timestamp, user, dan IP address |
-| AUDIT-02 | Lihat Log | Admin dapat melihat riwayat aktivitas sistem |
+| AUDIT-02 | Lihat Log     | Admin dapat melihat riwayat aktivitas sistem                  |
 
 ---
 
 ## 6. Spesifikasi Non-Fungsional
 
-| Kategori | Ketentuan |
-|----------|-----------|
-| **Performa** | Halaman utama load < 3 detik; query database < 1 detik untuk data ≤ 1000 siswa |
-| **Keamanan** | Password di-hash (PBKDF2-SHA256); CSRF protection via Flask-WTF; SQL Injection prevention via SQLAlchemy ORM; XSS protection via Jinja2 auto-escape |
-| **Reliabilitas** | Sistem dapat menangani 50 pengguna konkuren |
-| **Usability** | Antarmuka responsif (mobile-friendly via Bootstrap 5.3); waktu belajar pengguna baru < 30 menit |
-| **Maintainability** | Kode mengikuti PEP 8; komentar pada setiap fungsi utama; dokumentasi README.md |
-| **Skalabilitas** | Arsitektur modular (Blueprint); mudah ditambah modul baru |
-| **Kompatibilitas** | Browser: Chrome 100+, Firefox 100+, Edge 100+; OS: Windows 10+, Linux |
-| **Aksesibilitas** | Mendukung navigasi keyboard; label form lengkap |
+| Kategori            | Ketentuan                                                                                                                                           |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Performa**        | Halaman utama load < 3 detik; query database < 1 detik untuk data ≤ 1000 siswa                                                                      |
+| **Keamanan**        | Password di-hash (PBKDF2-SHA256); CSRF protection via Flask-WTF; SQL Injection prevention via SQLAlchemy ORM; XSS protection via Jinja2 auto-escape |
+| **Reliabilitas**    | Sistem dapat menangani 50 pengguna konkuren                                                                                                         |
+| **Usability**       | Antarmuka responsif (mobile-friendly via Bootstrap 5.3); waktu belajar pengguna baru < 30 menit                                                     |
+| **Maintainability** | Kode mengikuti PEP 8; komentar pada setiap fungsi utama; dokumentasi README.md                                                                      |
+| **Skalabilitas**    | Arsitektur modular (Blueprint); mudah ditambah modul baru                                                                                           |
+| **Kompatibilitas**  | Browser: Chrome 100+, Firefox 100+, Edge 100+; OS: Windows 10+, Linux                                                                               |
+| **Aksesibilitas**   | Mendukung navigasi keyboard; label form lengkap                                                                                                     |
 
 ---
 
@@ -216,32 +218,32 @@ Pengelolaan nilai siswa di banyak institusi pendidikan masih dilakukan secara ma
 
 ### 7.1 Tech Stack Utama
 
-| Layer | Teknologi | Versi | Keterangan |
-|-------|-----------|-------|------------|
-| **Language** | Python | 3.12 | Bahasa pemrograman utama |
-| **Backend** | Flask | 3.x | Web framework micro |
-| **ORM** | SQLAlchemy | 2.x | Database abstraction layer |
-| **Migration** | Flask-Migrate | 4.x | Database schema versioning (Alembic) |
-| **Authentication** | Flask-Login | 0.6.x | Session management & login |
-| **Form Validation** | Flask-WTF | 1.x | WTForms + CSRF protection |
-| **Database** | MySQL | 8.x | RDBMS utama |
-| **DB Driver** | PyMySQL | 1.x | Python MySQL connector |
-| **Frontend** | HTML5 | — | Markup |
-| **Styling** | Bootstrap | 5.3 | CSS framework responsif |
-| **Template** | Jinja2 | 3.x | Server-side rendering |
-| **JavaScript** | Vanilla JS | ES6+ | Logika frontend |
-| **Table** | DataTables | 1.13 | Tabel interaktif (sorting, search, pagination) |
-| **Alert** | SweetAlert2 | 11.x | Dialog konfirmasi & notifikasi |
-| **Icons** | Bootstrap Icons | 1.11 | Icon library |
-| **Charts** | Chart.js | 4.x | Visualisasi data |
-| **PDF** | WeasyPrint | 62.x | Generate laporan PDF |
-| **Excel** | openpyxl | 3.x | Ekspor data ke .xlsx *(tambahan)* |
-| **Password** | Werkzeug | 3.x | Password hashing (sudah termasuk Flask) |
-| **Testing** | Pytest | 8.x | Unit & integration testing |
-| **Test Client** | Flask Testing | — | Testing HTTP request Flask |
-| **Env Config** | python-dotenv | 1.x | Manajemen environment variable |
-| **IDE** | VS Code | Latest | Editor utama |
-| **VCS** | Git + GitHub | — | Version control |
+| Layer               | Teknologi       | Versi  | Keterangan                                     |
+| ------------------- | --------------- | ------ | ---------------------------------------------- |
+| **Language**        | Python          | 3.12   | Bahasa pemrograman utama                       |
+| **Backend**         | Flask           | 3.x    | Web framework micro                            |
+| **ORM**             | SQLAlchemy      | 2.x    | Database abstraction layer                     |
+| **Migration**       | Flask-Migrate   | 4.x    | Database schema versioning (Alembic)           |
+| **Authentication**  | Flask-Login     | 0.6.x  | Session management & login                     |
+| **Form Validation** | Flask-WTF       | 1.x    | WTForms + CSRF protection                      |
+| **Database**        | MySQL           | 8.x    | RDBMS utama                                    |
+| **DB Driver**       | PyMySQL         | 1.x    | Python MySQL connector                         |
+| **Frontend**        | HTML5           | —      | Markup                                         |
+| **Styling**         | Bootstrap       | 5.3    | CSS framework responsif                        |
+| **Template**        | Jinja2          | 3.x    | Server-side rendering                          |
+| **JavaScript**      | Vanilla JS      | ES6+   | Logika frontend                                |
+| **Table**           | DataTables      | 1.13   | Tabel interaktif (sorting, search, pagination) |
+| **Alert**           | SweetAlert2     | 11.x   | Dialog konfirmasi & notifikasi                 |
+| **Icons**           | Bootstrap Icons | 1.11   | Icon library                                   |
+| **Charts**          | Chart.js        | 4.x    | Visualisasi data                               |
+| **PDF**             | WeasyPrint      | 62.x   | Generate laporan PDF                           |
+| **Excel**           | openpyxl        | 3.x    | Ekspor data ke .xlsx _(tambahan)_              |
+| **Password**        | Werkzeug        | 3.x    | Password hashing (sudah termasuk Flask)        |
+| **Testing**         | Pytest          | 8.x    | Unit & integration testing                     |
+| **Test Client**     | Flask Testing   | —      | Testing HTTP request Flask                     |
+| **Env Config**      | python-dotenv   | 1.x    | Manajemen environment variable                 |
+| **IDE**             | VS Code         | Latest | Editor utama                                   |
+| **VCS**             | Git + GitHub    | —      | Version control                                |
 
 ### 7.2 Arsitektur Aplikasi
 
@@ -355,71 +357,71 @@ sipns/
 
 #### Tabel: `users`
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | INT | PK, AUTO_INCREMENT | Primary key |
-| username | VARCHAR(50) | UNIQUE, NOT NULL | Username login |
-| password_hash | VARCHAR(255) | NOT NULL | Hash password (PBKDF2) |
-| role | ENUM('admin','guru','siswa') | NOT NULL | Peran pengguna |
-| is_active | BOOLEAN | DEFAULT TRUE | Status akun aktif |
-| siswa_id | INT | FK → siswa.id, NULL | Relasi ke data siswa |
-| guru_id | INT | FK → guru.id, NULL | Relasi ke data guru |
-| created_at | DATETIME | DEFAULT NOW() | Waktu dibuat |
-| updated_at | DATETIME | ON UPDATE NOW() | Waktu diperbarui |
+| Kolom         | Tipe                         | Constraint          | Keterangan             |
+| ------------- | ---------------------------- | ------------------- | ---------------------- |
+| id            | INT                          | PK, AUTO_INCREMENT  | Primary key            |
+| username      | VARCHAR(50)                  | UNIQUE, NOT NULL    | Username login         |
+| password_hash | VARCHAR(255)                 | NOT NULL            | Hash password (PBKDF2) |
+| role          | ENUM('admin','guru','siswa') | NOT NULL            | Peran pengguna         |
+| is_active     | BOOLEAN                      | DEFAULT TRUE        | Status akun aktif      |
+| siswa_id      | INT                          | FK → siswa.id, NULL | Relasi ke data siswa   |
+| guru_id       | INT                          | FK → guru.id, NULL  | Relasi ke data guru    |
+| created_at    | DATETIME                     | DEFAULT NOW()       | Waktu dibuat           |
+| updated_at    | DATETIME                     | ON UPDATE NOW()     | Waktu diperbarui       |
 
 #### Tabel: `siswa`
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | INT | PK, AUTO_INCREMENT | Primary key |
-| nis | VARCHAR(20) | UNIQUE, NOT NULL | Nomor Induk Siswa |
-| nama | VARCHAR(100) | NOT NULL | Nama lengkap siswa |
-| kelas | VARCHAR(20) | NOT NULL | Kelas (contoh: X-IPA-1) |
-| created_at | DATETIME | DEFAULT NOW() | Waktu dibuat |
-| updated_at | DATETIME | ON UPDATE NOW() | Waktu diperbarui |
-| deleted_at | DATETIME | NULL | Soft delete timestamp |
+| Kolom      | Tipe         | Constraint         | Keterangan              |
+| ---------- | ------------ | ------------------ | ----------------------- |
+| id         | INT          | PK, AUTO_INCREMENT | Primary key             |
+| nis        | VARCHAR(20)  | UNIQUE, NOT NULL   | Nomor Induk Siswa       |
+| nama       | VARCHAR(100) | NOT NULL           | Nama lengkap siswa      |
+| kelas      | VARCHAR(20)  | NOT NULL           | Kelas (contoh: X-IPA-1) |
+| created_at | DATETIME     | DEFAULT NOW()      | Waktu dibuat            |
+| updated_at | DATETIME     | ON UPDATE NOW()    | Waktu diperbarui        |
+| deleted_at | DATETIME     | NULL               | Soft delete timestamp   |
 
 #### Tabel: `guru`
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | INT | PK, AUTO_INCREMENT | Primary key |
-| id_guru | VARCHAR(20) | UNIQUE, NOT NULL | ID Guru |
-| nama_guru | VARCHAR(100) | NOT NULL | Nama lengkap guru |
-| mata_pelajaran | VARCHAR(100) | NOT NULL | Mata pelajaran yang diampu |
-| created_at | DATETIME | DEFAULT NOW() | Waktu dibuat |
-| updated_at | DATETIME | ON UPDATE NOW() | Waktu diperbarui |
-| deleted_at | DATETIME | NULL | Soft delete timestamp |
+| Kolom          | Tipe         | Constraint         | Keterangan                 |
+| -------------- | ------------ | ------------------ | -------------------------- |
+| id             | INT          | PK, AUTO_INCREMENT | Primary key                |
+| id_guru        | VARCHAR(20)  | UNIQUE, NOT NULL   | ID Guru                    |
+| nama_guru      | VARCHAR(100) | NOT NULL           | Nama lengkap guru          |
+| mata_pelajaran | VARCHAR(100) | NOT NULL           | Mata pelajaran yang diampu |
+| created_at     | DATETIME     | DEFAULT NOW()      | Waktu dibuat               |
+| updated_at     | DATETIME     | ON UPDATE NOW()    | Waktu diperbarui           |
+| deleted_at     | DATETIME     | NULL               | Soft delete timestamp      |
 
 #### Tabel: `nilai`
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | INT | PK, AUTO_INCREMENT | Primary key |
-| siswa_id | INT | FK → siswa.id, NOT NULL | Relasi ke siswa |
-| guru_id | INT | FK → guru.id, NOT NULL | Guru penginput |
-| mata_pelajaran | VARCHAR(100) | NOT NULL | Nama mata pelajaran |
-| nilai_tugas | DECIMAL(5,2) | NOT NULL, CHECK(0-100) | Nilai tugas |
-| nilai_uts | DECIMAL(5,2) | NOT NULL, CHECK(0-100) | Nilai UTS |
-| nilai_uas | DECIMAL(5,2) | NOT NULL, CHECK(0-100) | Nilai UAS |
-| nilai_akhir | DECIMAL(5,2) | NOT NULL | Hasil kalkulasi otomatis |
-| status_lulus | BOOLEAN | NOT NULL | TRUE = Lulus, FALSE = Tidak Lulus |
-| is_locked | BOOLEAN | DEFAULT FALSE | Status kunci nilai |
-| created_at | DATETIME | DEFAULT NOW() | Waktu input |
-| updated_at | DATETIME | ON UPDATE NOW() | Waktu pembaruan |
+| Kolom          | Tipe         | Constraint              | Keterangan                        |
+| -------------- | ------------ | ----------------------- | --------------------------------- |
+| id             | INT          | PK, AUTO_INCREMENT      | Primary key                       |
+| siswa_id       | INT          | FK → siswa.id, NOT NULL | Relasi ke siswa                   |
+| guru_id        | INT          | FK → guru.id, NOT NULL  | Guru penginput                    |
+| mata_pelajaran | VARCHAR(100) | NOT NULL                | Nama mata pelajaran               |
+| nilai_tugas    | DECIMAL(5,2) | NOT NULL, CHECK(0-100)  | Nilai tugas                       |
+| nilai_uts      | DECIMAL(5,2) | NOT NULL, CHECK(0-100)  | Nilai UTS                         |
+| nilai_uas      | DECIMAL(5,2) | NOT NULL, CHECK(0-100)  | Nilai UAS                         |
+| nilai_akhir    | DECIMAL(5,2) | NOT NULL                | Hasil kalkulasi otomatis          |
+| status_lulus   | BOOLEAN      | NOT NULL                | TRUE = Lulus, FALSE = Tidak Lulus |
+| is_locked      | BOOLEAN      | DEFAULT FALSE           | Status kunci nilai                |
+| created_at     | DATETIME     | DEFAULT NOW()           | Waktu input                       |
+| updated_at     | DATETIME     | ON UPDATE NOW()         | Waktu pembaruan                   |
 
 #### Tabel: `audit_log`
 
-| Kolom | Tipe | Constraint | Keterangan |
-|-------|------|------------|------------|
-| id | INT | PK, AUTO_INCREMENT | Primary key |
-| user_id | INT | FK → users.id | Pengguna yang beraksi |
-| action | VARCHAR(50) | NOT NULL | Jenis aksi |
-| table_name | VARCHAR(50) | NOT NULL | Tabel yang terpengaruh |
-| record_id | INT | NULL | ID record yang diubah |
-| description | TEXT | NULL | Deskripsi aksi |
-| ip_address | VARCHAR(45) | NULL | IP pengguna |
-| created_at | DATETIME | DEFAULT NOW() | Waktu aksi |
+| Kolom       | Tipe        | Constraint         | Keterangan             |
+| ----------- | ----------- | ------------------ | ---------------------- |
+| id          | INT         | PK, AUTO_INCREMENT | Primary key            |
+| user_id     | INT         | FK → users.id      | Pengguna yang beraksi  |
+| action      | VARCHAR(50) | NOT NULL           | Jenis aksi             |
+| table_name  | VARCHAR(50) | NOT NULL           | Tabel yang terpengaruh |
+| record_id   | INT         | NULL               | ID record yang diubah  |
+| description | TEXT        | NULL               | Deskripsi aksi         |
+| ip_address  | VARCHAR(45) | NULL               | IP pengguna            |
+| created_at  | DATETIME    | DEFAULT NOW()      | Waktu aksi             |
 
 ### 8.3 Index
 
@@ -439,45 +441,49 @@ CREATE INDEX idx_audit_created ON audit_log(created_at);
 
 ### 9.1 Daftar Halaman
 
-| Kode | Halaman | Role Akses | URL |
-|------|---------|------------|-----|
-| UI-01 | Halaman Login | Semua | `/auth/login` |
-| UI-02 | Dashboard Admin | Admin | `/admin/dashboard` |
-| UI-03 | Dashboard Guru | Guru | `/guru/dashboard` |
-| UI-04 | Dashboard Siswa | Siswa | `/siswa/dashboard` |
-| UI-05 | Daftar Siswa | Admin | `/admin/siswa` |
-| UI-06 | Form Tambah/Edit Siswa | Admin | `/admin/siswa/tambah` |
-| UI-07 | Profil Siswa | Admin, Guru | `/admin/siswa/<id>` |
-| UI-08 | Daftar Guru | Admin | `/admin/guru` |
-| UI-09 | Form Tambah/Edit Guru | Admin | `/admin/guru/tambah` |
-| UI-10 | Input Nilai | Guru | `/guru/nilai/input` |
-| UI-11 | Rekap Nilai Kelas | Guru, Admin | `/guru/nilai/rekap` |
-| UI-12 | Nilai Pribadi Siswa | Siswa | `/siswa/nilai` |
-| UI-13 | Laporan PDF | Admin, Guru | `/laporan/pdf/<kelas>` |
-| UI-14 | Ekspor Excel | Admin | `/laporan/excel` |
-| UI-15 | Audit Log | Admin | `/admin/audit` |
-| UI-16 | Manajemen User | Admin | `/admin/users` |
+| Kode  | Halaman                | Role Akses  | URL                    |
+| ----- | ---------------------- | ----------- | ---------------------- |
+| UI-01 | Halaman Login          | Semua       | `/auth/login`          |
+| UI-02 | Dashboard Admin        | Admin       | `/admin/dashboard`     |
+| UI-03 | Dashboard Guru         | Guru        | `/guru/dashboard`      |
+| UI-04 | Dashboard Siswa        | Siswa       | `/siswa/dashboard`     |
+| UI-05 | Daftar Siswa           | Admin       | `/admin/siswa`         |
+| UI-06 | Form Tambah/Edit Siswa | Admin       | `/admin/siswa/tambah`  |
+| UI-07 | Profil Siswa           | Admin, Guru | `/admin/siswa/<id>`    |
+| UI-08 | Daftar Guru            | Admin       | `/admin/guru`          |
+| UI-09 | Form Tambah/Edit Guru  | Admin       | `/admin/guru/tambah`   |
+| UI-10 | Input Nilai            | Guru        | `/guru/nilai/input`    |
+| UI-11 | Rekap Nilai Kelas      | Guru, Admin | `/guru/nilai/rekap`    |
+| UI-12 | Nilai Pribadi Siswa    | Siswa       | `/siswa/nilai`         |
+| UI-13 | Laporan PDF            | Admin, Guru | `/laporan/pdf/<kelas>` |
+| UI-14 | Ekspor Excel           | Admin       | `/laporan/excel`       |
+| UI-15 | Audit Log              | Admin       | `/admin/audit`         |
+| UI-16 | Manajemen User         | Admin       | `/admin/users`         |
 
 ### 9.2 Deskripsi Komponen UI
 
 #### Navigasi Global (Navbar)
+
 - Logo/nama sistem kiri
 - Menu navigasi kontekstual (berbeda per role)
 - Info pengguna + tombol logout kanan
 - Responsif (hamburger menu mobile)
 
 #### Sidebar (Admin/Guru)
+
 - Menu hierarkis per modul
 - Indikator halaman aktif
 - Collapsible di layar kecil
 
 #### Halaman Login
+
 - Card terpusat dengan logo sekolah
 - Field: Username, Password (dengan toggle show/hide)
 - Tombol Login dengan loading state
 - Flash message error (SweetAlert2 toast)
 
 #### Tabel Data (DataTables)
+
 - Search box global
 - Sorting per kolom
 - Pagination (10/25/50/All per halaman)
@@ -485,12 +491,14 @@ CREATE INDEX idx_audit_created ON audit_log(created_at);
 - Badge status (Lulus/Tidak Lulus) berwarna
 
 #### Form Input Nilai
+
 - Dropdown pemilih siswa & mata pelajaran
 - Field angka dengan validasi real-time
 - Preview kalkulasi nilai akhir live (JavaScript)
 - Indikator status lulus/tidak lulus live
 
 #### Dashboard Chart
+
 - Bar chart: distribusi nilai per kelas
 - Doughnut chart: persentase lulus/tidak lulus
 - Card statistik: rata-rata, tertinggi, terendah
@@ -680,24 +688,24 @@ Minimal 3 fungsi/prosedur yang diimplementasikan di `app/services/`:
 def hitung_nilai_akhir(nilai_tugas: float, nilai_uts: float, nilai_uas: float) -> float:
     """
     Menghitung nilai akhir siswa berdasarkan bobot komponen nilai.
-    
+
     Formula: (30% × Tugas) + (30% × UTS) + (40% × UAS)
-    
+
     Args:
         nilai_tugas (float): Nilai tugas harian (0-100)
         nilai_uts (float): Nilai Ujian Tengah Semester (0-100)
         nilai_uas (float): Nilai Ujian Akhir Semester (0-100)
-    
+
     Returns:
         float: Nilai akhir dibulatkan 2 desimal
-    
+
     Raises:
         ValueError: Jika salah satu nilai di luar rentang 0-100
     """
     validasi_rentang_nilai(nilai_tugas, "Tugas")
     validasi_rentang_nilai(nilai_uts, "UTS")
     validasi_rentang_nilai(nilai_uas, "UAS")
-    
+
     nilai_akhir = (0.30 * nilai_tugas) + (0.30 * nilai_uts) + (0.40 * nilai_uas)
     return round(nilai_akhir, 2)
 ```
@@ -708,14 +716,14 @@ def hitung_nilai_akhir(nilai_tugas: float, nilai_uts: float, nilai_uas: float) -
 def validasi_rentang_nilai(nilai: float, label: str = "Nilai") -> bool:
     """
     Memvalidasi apakah nilai berada dalam rentang valid 0–100.
-    
+
     Args:
         nilai (float): Nilai yang akan divalidasi
         label (str): Label komponen nilai untuk pesan error
-    
+
     Returns:
         bool: True jika valid
-    
+
     Raises:
         ValueError: Jika nilai di luar rentang 0-100 atau bukan numerik
     """
@@ -732,11 +740,11 @@ def validasi_rentang_nilai(nilai: float, label: str = "Nilai") -> bool:
 def tentukan_status_kelulusan(nilai_akhir: float, kkm: float = 70.0) -> dict:
     """
     Menentukan status kelulusan siswa berdasarkan nilai akhir dan KKM.
-    
+
     Args:
         nilai_akhir (float): Nilai akhir hasil kalkulasi
         kkm (float): Kriteria Ketuntasan Minimal, default 70
-    
+
     Returns:
         dict: {
             'lulus': bool,
@@ -760,11 +768,11 @@ def tentukan_status_kelulusan(nilai_akhir: float, kkm: float = 70.0) -> dict:
 def generate_laporan_pdf(kelas: str, template: str = 'laporan/rekap_kelas.html') -> bytes:
     """
     Menghasilkan file PDF laporan rekap nilai siswa untuk satu kelas.
-    
+
     Args:
         kelas (str): Nama kelas yang akan dicetak
         template (str): Path template Jinja2 untuk PDF
-    
+
     Returns:
         bytes: Konten file PDF dalam format bytes
     """
@@ -780,10 +788,10 @@ def generate_laporan_pdf(kelas: str, template: str = 'laporan/rekap_kelas.html')
         .order_by(Siswa.nama)
         .all()
     )
-    
+
     statistik = hitung_statistik_kelas(data_nilai)
     html_content = render_template(template, data=data_nilai, statistik=statistik, kelas=kelas)
-    
+
     return weasyprint.HTML(string=html_content).write_pdf()
 ```
 
@@ -793,19 +801,19 @@ def generate_laporan_pdf(kelas: str, template: str = 'laporan/rekap_kelas.html')
 def hitung_statistik_kelas(data_nilai: list) -> dict:
     """
     Menghitung statistik agregat nilai untuk satu kelas/kelompok.
-    
+
     Args:
         data_nilai (list): List objek Nilai
-    
+
     Returns:
         dict: Statistik meliputi rata-rata, tertinggi, terendah, dan persentase lulus
     """
     if not data_nilai:
         return {'rata_rata': 0, 'tertinggi': 0, 'terendah': 0, 'persen_lulus': 0, 'total': 0}
-    
+
     nilai_list = [n.nilai_akhir for n in data_nilai]
     lulus_count = sum(1 for n in data_nilai if n.status_lulus)
-    
+
     return {
         'total': len(nilai_list),
         'rata_rata': round(sum(nilai_list) / len(nilai_list), 2),
@@ -832,7 +840,7 @@ from datetime import datetime
 class Siswa(db.Model):
     """
     Model OOP merepresentasikan entitas Siswa dalam sistem.
-    
+
     Attributes:
         id (int): Primary key
         nis (str): Nomor Induk Siswa, unik
@@ -842,9 +850,9 @@ class Siswa(db.Model):
         updated_at (datetime): Timestamp pembaruan record
         deleted_at (datetime): Soft delete timestamp
     """
-    
+
     __tablename__ = 'siswa'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     nis = db.Column(db.String(20), unique=True, nullable=False, index=True)
     nama = db.Column(db.String(100), nullable=False)
@@ -852,25 +860,25 @@ class Siswa(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted_at = db.Column(db.DateTime, nullable=True)
-    
+
     # Relasi
     nilai = db.relationship('Nilai', backref='siswa', lazy='dynamic',
                             foreign_keys='Nilai.siswa_id')
     user = db.relationship('User', backref='siswa', uselist=False,
                            foreign_keys='User.siswa_id')
-    
+
     def __repr__(self):
         return f'<Siswa {self.nis}: {self.nama}>'
-    
+
     def nilai_akhir_all(self) -> list:
         """Mengambil semua nilai akhir siswa lintas mata pelajaran."""
         return [n.nilai_akhir for n in self.nilai if n.nilai_akhir is not None]
-    
+
     def rata_rata_nilai(self) -> float:
         """Menghitung rata-rata nilai akhir siswa dari semua mata pelajaran."""
         nilai_list = self.nilai_akhir_all()
         return round(sum(nilai_list) / len(nilai_list), 2) if nilai_list else 0.0
-    
+
     def status_kelulusan_global(self) -> str:
         """
         Menentukan status kelulusan siswa secara global (semua mapel lulus).
@@ -880,11 +888,11 @@ class Siswa(db.Model):
         if not nilai_records:
             return 'Belum Ada Nilai'
         return 'Lulus' if all(n.status_lulus for n in nilai_records) else 'Tidak Lulus'
-    
+
     def soft_delete(self):
         """Melakukan soft delete dengan menandai deleted_at."""
         self.deleted_at = datetime.utcnow()
-    
+
     def to_dict(self) -> dict:
         """Mengkonversi objek Siswa ke dictionary untuk JSON response."""
         return {
@@ -896,12 +904,12 @@ class Siswa(db.Model):
             'status': self.status_kelulusan_global(),
             'created_at': self.created_at.isoformat()
         }
-    
+
     @classmethod
     def cari_by_nis(cls, nis: str):
         """Mencari siswa berdasarkan NIS (class method)."""
         return cls.query.filter_by(nis=nis, deleted_at=None).first()
-    
+
     @classmethod
     def daftar_kelas(cls) -> list:
         """Mengambil daftar kelas unik yang tersedia."""
@@ -924,7 +932,7 @@ class Nilai(db.Model):
     """
     Model OOP merepresentasikan entitas Nilai dalam sistem.
     Mengintegrasikan pemrograman terstruktur (fungsi kalkulasi) ke dalam OOP.
-    
+
     Attributes:
         id (int): Primary key
         siswa_id (int): FK ke tabel siswa
@@ -937,9 +945,9 @@ class Nilai(db.Model):
         status_lulus (bool): True jika lulus (nilai_akhir >= 70)
         is_locked (bool): Status kunci nilai oleh guru
     """
-    
+
     __tablename__ = 'nilai'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     siswa_id = db.Column(db.Integer, db.ForeignKey('siswa.id'), nullable=False)
     guru_id = db.Column(db.Integer, db.ForeignKey('guru.id'), nullable=False)
@@ -952,10 +960,10 @@ class Nilai(db.Model):
     is_locked = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     def __repr__(self):
         return f'<Nilai siswa_id={self.siswa_id} mapel={self.mata_pelajaran} akhir={self.nilai_akhir}>'
-    
+
     def hitung_dan_simpan(self):
         """
         Memanggil fungsi terstruktur untuk kalkulasi nilai akhir dan
@@ -970,16 +978,16 @@ class Nilai(db.Model):
         )
         status = tentukan_status_kelulusan(float(self.nilai_akhir))
         self.status_lulus = status['lulus']
-    
+
     def lock(self):
         """Mengunci nilai sehingga tidak dapat diubah kembali."""
         if not self.is_locked:
             self.is_locked = True
-    
+
     def unlock(self):
         """Membuka kunci nilai (hanya admin)."""
         self.is_locked = False
-    
+
     def get_detail_kalkulasi(self) -> dict:
         """Mengembalikan rincian perhitungan nilai akhir untuk ditampilkan."""
         return {
@@ -990,7 +998,7 @@ class Nilai(db.Model):
             'status_lulus': self.status_lulus,
             'kkm': 70
         }
-    
+
     def to_dict(self) -> dict:
         """Mengkonversi objek Nilai ke dictionary untuk JSON response."""
         return {
@@ -1012,9 +1020,9 @@ class Nilai(db.Model):
 
 class Guru(db.Model):
     """Model OOP merepresentasikan entitas Guru dalam sistem."""
-    
+
     __tablename__ = 'guru'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     id_guru = db.Column(db.String(20), unique=True, nullable=False)
     nama_guru = db.Column(db.String(100), nullable=False)
@@ -1022,11 +1030,11 @@ class Guru(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted_at = db.Column(db.DateTime, nullable=True)
-    
+
     # Relasi
     nilai_diinput = db.relationship('Nilai', backref='guru', lazy='dynamic',
                                      foreign_keys='Nilai.guru_id')
-    
+
     def get_siswa_diajar(self) -> list:
         """Mengambil daftar siswa yang pernah diberi nilai oleh guru ini."""
         from app.models.siswa import Siswa
@@ -1036,10 +1044,10 @@ class Guru(db.Model):
         return Siswa.query.filter(
             Siswa.id.in_([s[0] for s in siswa_ids])
         ).all()
-    
+
     def soft_delete(self):
         self.deleted_at = datetime.utcnow()
-    
+
     def to_dict(self) -> dict:
         return {
             'id': self.id,
@@ -1055,29 +1063,29 @@ class Guru(db.Model):
 
 ### 13.1 Strategi Pengujian
 
-| Level | Metode | Tool |
-|-------|--------|------|
-| Unit Testing | Fungsi & method individual | Pytest |
+| Level               | Metode                                  | Tool                       |
+| ------------------- | --------------------------------------- | -------------------------- |
+| Unit Testing        | Fungsi & method individual              | Pytest                     |
 | Integration Testing | Alur antar modul (route → service → DB) | Pytest + Flask Test Client |
-| Functional Testing | Pengujian fitur end-to-end | Manual / Pytest |
-| Regression Testing | Setelah setiap perbaikan bug | Pytest |
+| Functional Testing  | Pengujian fitur end-to-end              | Manual / Pytest            |
+| Regression Testing  | Setelah setiap perbaikan bug            | Pytest                     |
 
 ### 13.2 Test Case Utama
 
-| TC-ID | Modul | Skenario | Input | Expected Output | Prioritas |
-|-------|-------|----------|-------|-----------------|-----------|
-| TC-01 | AUTH | Login admin valid | username: admin, pass: admin123 | Redirect ke /admin/dashboard | Wajib |
-| TC-02 | AUTH | Login password salah | username: admin, pass: salah | Flash error "Kredensial salah" | Wajib |
-| TC-03 | AUTH | Login dengan role siswa | NIS valid | Redirect ke /siswa/dashboard | Wajib |
-| TC-04 | NILAI | Kalkulasi nilai normal | T=80, U=75, A=85 | NA = 80.5 | Wajib |
-| TC-05 | NILAI | Nilai tepat KKM | T=70, U=70, A=70 | NA = 70.0, Lulus | Wajib |
-| TC-06 | NILAI | Nilai di bawah KKM | T=50, U=60, A=65 | NA = 59.0, Tidak Lulus | Wajib |
-| TC-07 | NILAI | Input nilai di luar rentang | T=101 | Error validasi | Wajib |
-| TC-08 | NILAI | Input nilai negatif | T=-5 | Error validasi | Wajib |
-| TC-09 | SISWA | Tambah siswa NIS duplikat | NIS yang sudah ada | Error: NIS sudah terdaftar | Wajib |
-| TC-10 | LAPORAN | Generate PDF laporan kelas | kelas=X-IPA-1 | File PDF berhasil dibuat | Penting |
-| TC-11 | DB | Koneksi database | — | Connection berhasil | Wajib |
-| TC-12 | AKSES | Siswa akses halaman admin | URL: /admin/dashboard | Redirect 403/login | Wajib |
+| TC-ID | Modul   | Skenario                    | Input                           | Expected Output                | Prioritas |
+| ----- | ------- | --------------------------- | ------------------------------- | ------------------------------ | --------- |
+| TC-01 | AUTH    | Login admin valid           | username: admin, pass: admin123 | Redirect ke /admin/dashboard   | Wajib     |
+| TC-02 | AUTH    | Login password salah        | username: admin, pass: salah    | Flash error "Kredensial salah" | Wajib     |
+| TC-03 | AUTH    | Login dengan role siswa     | NIS valid                       | Redirect ke /siswa/dashboard   | Wajib     |
+| TC-04 | NILAI   | Kalkulasi nilai normal      | T=80, U=75, A=85                | NA = 80.5                      | Wajib     |
+| TC-05 | NILAI   | Nilai tepat KKM             | T=70, U=70, A=70                | NA = 70.0, Lulus               | Wajib     |
+| TC-06 | NILAI   | Nilai di bawah KKM          | T=50, U=60, A=65                | NA = 59.0, Tidak Lulus         | Wajib     |
+| TC-07 | NILAI   | Input nilai di luar rentang | T=101                           | Error validasi                 | Wajib     |
+| TC-08 | NILAI   | Input nilai negatif         | T=-5                            | Error validasi                 | Wajib     |
+| TC-09 | SISWA   | Tambah siswa NIS duplikat   | NIS yang sudah ada              | Error: NIS sudah terdaftar     | Wajib     |
+| TC-10 | LAPORAN | Generate PDF laporan kelas  | kelas=X-IPA-1                   | File PDF berhasil dibuat       | Penting   |
+| TC-11 | DB      | Koneksi database            | —                               | Connection berhasil            | Wajib     |
+| TC-12 | AKSES   | Siswa akses halaman admin   | URL: /admin/dashboard           | Redirect 403/login             | Wajib     |
 
 ### 13.3 Formula Kalkulasi Uji
 
@@ -1095,45 +1103,45 @@ TC-06: NA = (0.30 × 50) + (0.30 × 60) + (0.40 × 65)
 
 ## 14. Batasan Sistem
 
-| No | Batasan |
-|----|---------|
-| 1 | Satu siswa hanya memiliki satu nilai per mata pelajaran |
-| 2 | Nilai yang sudah dikunci oleh guru tidak dapat diubah tanpa intervensi admin |
-| 3 | NIS bersifat unik dan tidak dapat diubah setelah didaftarkan |
-| 4 | Sistem hanya mendukung tiga role pengguna: Admin, Guru, Siswa |
-| 5 | Laporan PDF hanya tersedia per kelas, bukan lintas kelas dalam satu dokumen |
-| 6 | Sistem tidak memiliki fitur reset password mandiri; harus melalui admin |
-| 7 | Rentang nilai valid: 0 sampai 100 (desimal diperbolehkan) |
-| 8 | KKM bersifat tetap (70) dan tidak dapat dikonfigurasi per mata pelajaran |
-| 9 | Sistem hanya mendukung satu database MySQL; tidak ada multi-tenant |
-| 10 | Tidak ada notifikasi email/SMS |
+| No  | Batasan                                                                      |
+| --- | ---------------------------------------------------------------------------- |
+| 1   | Satu siswa hanya memiliki satu nilai per mata pelajaran                      |
+| 2   | Nilai yang sudah dikunci oleh guru tidak dapat diubah tanpa intervensi admin |
+| 3   | NIS bersifat unik dan tidak dapat diubah setelah didaftarkan                 |
+| 4   | Sistem hanya mendukung tiga role pengguna: Admin, Guru, Siswa                |
+| 5   | Laporan PDF hanya tersedia per kelas, bukan lintas kelas dalam satu dokumen  |
+| 6   | Sistem tidak memiliki fitur reset password mandiri; harus melalui admin      |
+| 7   | Rentang nilai valid: 0 sampai 100 (desimal diperbolehkan)                    |
+| 8   | KKM bersifat tetap (70) dan tidak dapat dikonfigurasi per mata pelajaran     |
+| 9   | Sistem hanya mendukung satu database MySQL; tidak ada multi-tenant           |
+| 10  | Tidak ada notifikasi email/SMS                                               |
 
 ---
 
 ## 15. Risiko & Mitigasi
 
-| Risiko | Probabilitas | Dampak | Mitigasi |
-|--------|-------------|--------|----------|
-| Konflik versi library Python | Sedang | Tinggi | Gunakan `requirements.txt` dengan versi terkunci; virtual environment |
-| WeasyPrint kesulitan rendering font | Sedang | Sedang | Gunakan font web-safe; test PDF di awal development |
-| MySQL tidak terpasang di environment | Rendah | Tinggi | Sediakan Docker Compose untuk setup cepat |
-| SQL Injection melalui form input | Rendah | Sangat Tinggi | Selalu gunakan SQLAlchemy ORM; tidak pernah raw query dari input user |
-| Data nilai terhapus tidak sengaja | Rendah | Sangat Tinggi | Implementasi soft delete; audit log semua operasi DELETE |
-| Performa lambat untuk data besar | Rendah | Sedang | Gunakan pagination DataTables; tambahkan database index |
+| Risiko                               | Probabilitas | Dampak        | Mitigasi                                                              |
+| ------------------------------------ | ------------ | ------------- | --------------------------------------------------------------------- |
+| Konflik versi library Python         | Sedang       | Tinggi        | Gunakan `requirements.txt` dengan versi terkunci; virtual environment |
+| WeasyPrint kesulitan rendering font  | Sedang       | Sedang        | Gunakan font web-safe; test PDF di awal development                   |
+| MySQL tidak terpasang di environment | Rendah       | Tinggi        | Sediakan Docker Compose untuk setup cepat                             |
+| SQL Injection melalui form input     | Rendah       | Sangat Tinggi | Selalu gunakan SQLAlchemy ORM; tidak pernah raw query dari input user |
+| Data nilai terhapus tidak sengaja    | Rendah       | Sangat Tinggi | Implementasi soft delete; audit log semua operasi DELETE              |
+| Performa lambat untuk data besar     | Rendah       | Sedang        | Gunakan pagination DataTables; tambahkan database index               |
 
 ---
 
 ## 16. Milestone & Timeline
 
-| Fase | Tugas | Deliverable | Estimasi |
-|------|-------|-------------|----------|
-| **Fase 1** | Analisis & Perancangan (Tugas 1) | PRD.md, ERD, Wireframe, Rancangan Fungsi & Class | Minggu 1–2 |
-| **Fase 2** | Setup Proyek | Struktur direktori, konfigurasi DB, env setup, init Flask | Minggu 2 |
-| **Fase 3** | Implementasi Backend (Tugas 2) | Models, Services, Blueprints, Forms | Minggu 3–4 |
-| **Fase 4** | Implementasi Frontend | Templates Jinja2, integrasi Bootstrap, DataTables, Chart.js | Minggu 4–5 |
-| **Fase 5** | Fitur Laporan | PDF WeasyPrint, Ekspor Excel | Minggu 5 |
-| **Fase 6** | Pengujian & Debugging (Tugas 3) | Test suite Pytest, bug fixes, dokumentasi | Minggu 6 |
-| **Fase 7** | Dokumentasi Final | README.md, komentar kode, laporan akhir | Minggu 6 |
+| Fase       | Tugas                            | Deliverable                                                 | Estimasi   |
+| ---------- | -------------------------------- | ----------------------------------------------------------- | ---------- |
+| **Fase 1** | Analisis & Perancangan (Tugas 1) | PRD.md, ERD, Wireframe, Rancangan Fungsi & Class            | Minggu 1–2 |
+| **Fase 2** | Setup Proyek                     | Struktur direktori, konfigurasi DB, env setup, init Flask   | Minggu 2   |
+| **Fase 3** | Implementasi Backend (Tugas 2)   | Models, Services, Blueprints, Forms                         | Minggu 3–4 |
+| **Fase 4** | Implementasi Frontend            | Templates Jinja2, integrasi Bootstrap, DataTables, Chart.js | Minggu 4–5 |
+| **Fase 5** | Fitur Laporan                    | PDF WeasyPrint, Ekspor Excel                                | Minggu 5   |
+| **Fase 6** | Pengujian & Debugging (Tugas 3)  | Test suite Pytest, bug fixes, dokumentasi                   | Minggu 6   |
+| **Fase 7** | Dokumentasi Final                | README.md, komentar kode, laporan akhir                     | Minggu 6   |
 
 ---
 
@@ -1195,6 +1203,6 @@ flask run
 
 ---
 
-*Dokumen ini merupakan acuan pengembangan SIPNS. Setiap perubahan signifikan terhadap spesifikasi harus didokumentasikan dalam changelog dan dikomunikasikan kepada seluruh anggota tim.*
+_Dokumen ini merupakan acuan pengembangan SIPNS. Setiap perubahan signifikan terhadap spesifikasi harus didokumentasikan dalam changelog dan dikomunikasikan kepada seluruh anggota tim._
 
-**Versi:** 1.0.0 | **Status:** Draft | **Terakhir diperbarui:** 2025
+**Versi:** 1.0.0 | **Status:** Draft | **Terakhir diperbarui:** 2026
