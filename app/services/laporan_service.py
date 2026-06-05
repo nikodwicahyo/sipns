@@ -52,7 +52,9 @@ def _get_base_url():
     return None
 
 
-def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html', mata_pelajaran=None):
+def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html', mata_pelajaran=None,
+                        guru_id=None, siswa_id=None, status_lulus=None,
+                        filter_info=None):
     """Generate PDF laporan rekap nilai seluruh siswa dalam satu kelas.
 
     Args:
@@ -68,6 +70,16 @@ def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html', mata_pelaja
             Untuk akses guru, route handler akan memaksa parameter ini
             sesuai ``current_user.guru.mata_pelajaran`` agar scope data
             sesuai akun login.
+        guru_id (int, optional): Filter berdasarkan guru penginput nilai.
+            Default ``None`` (semua guru).
+        siswa_id (int, optional): Filter berdasarkan siswa tertentu.
+            Default ``None`` (semua siswa di kelas).
+        status_lulus (str, optional): Filter kelulusan. Nilai yang valid:
+            ``'lulus'`` (status_lulus=True), ``'tidak_lulus'`` (status_lulus=False),
+            atau ``None`` (semua status). Default ``None``.
+        filter_info (dict, optional): Metadata filter aktif untuk
+            ditampilkan di header PDF. Contoh: ``{'guru': 'Budi',
+            'siswa': 'Andi', 'status': 'Lulus'}``. Field ``None`` di-skip.
 
     Returns:
         bytes: Konten file PDF siap-download. Caller (``laporan/routes.py``)
@@ -93,6 +105,14 @@ def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html', mata_pelaja
         # Filter mata pelajaran jika diisi (akses guru → mapel guru saja).
         if mata_pelajaran:
             query = query.filter(Nilai.mata_pelajaran == mata_pelajaran)
+        if guru_id is not None:
+            query = query.filter(Nilai.guru_id == guru_id)
+        if siswa_id is not None:
+            query = query.filter(Nilai.siswa_id == siswa_id)
+        if status_lulus == 'lulus':
+            query = query.filter(Nilai.status_lulus.is_(True))
+        elif status_lulus == 'tidak_lulus':
+            query = query.filter(Nilai.status_lulus.is_(False))
         data_nilai = query.order_by(Siswa.nama).all()
 
         # Statistik agregat (rata-rata, tertinggi, dll) untuk footer PDF.
@@ -100,13 +120,14 @@ def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html', mata_pelaja
 
         # Render template Jinja2 → HTML string. Variabel ``data``,
         # ``statistik``, ``kelas``, ``mata_pelajaran``, ``current_year``,
-        # ``tanggal_cetak`` tersedia di template.
+        # ``tanggal_cetak``, ``filter_info`` tersedia di template.
         html_content = render_template(
             template,
             data=data_nilai,
             statistik=statistik,
             kelas=kelas,
             mata_pelajaran=mata_pelajaran,
+            filter_info=filter_info or {},
             current_year=current_year_jakarta(),
             tanggal_cetak=now_jakarta().strftime('%d/%m/%Y %H:%M'),
         )
@@ -168,12 +189,14 @@ def generate_transkrip_pdf(siswa_id):
         raise RuntimeError(f"Gagal generate PDF transkrip: {e}") from e
 
 
-def export_excel(kelas=None, dicetak_oleh=None, mata_pelajaran=None):
+def export_excel(kelas=None, dicetak_oleh=None, mata_pelajaran=None,
+                 guru_id=None, siswa_id=None, status_lulus=None,
+                 filter_info=None):
     """Ekspor data nilai ke file ``.xlsx`` (Microsoft Excel format).
 
     Format workbook:
     - Row 1: Judul laporan (merged, bold, font besar).
-    - Row 2: Info kelas, mata pelajaran, tanggal, pencetak (merged).
+    - Row 2: Info kelas, mata pelajaran, filter, tanggal, pencetak (merged).
     - Row 3: Baris kosong (spacing).
     - Row 4: Header kolom (bold, fill biru, teks putih).
     - Row 5+: Data nilai (alternating row color abu-abu/putih).
@@ -188,6 +211,14 @@ def export_excel(kelas=None, dicetak_oleh=None, mata_pelajaran=None):
             hanya record dengan ``mata_pelajaran`` cocok yang diekspor.
             Untuk akses guru, route handler memaksa parameter ini
             sesuai akun login.
+        guru_id (int, optional): Filter berdasarkan guru penginput nilai.
+            Default ``None`` (semua guru).
+        siswa_id (int, optional): Filter berdasarkan siswa tertentu.
+            Default ``None`` (semua siswa).
+        status_lulus (str, optional): Filter kelulusan. ``'lulus'`` /
+            ``'tidak_lulus'`` / ``None`` (semua).
+        filter_info (dict, optional): Metadata filter untuk header Excel.
+            Hanya field yang ada & tidak None yang akan ditampilkan.
 
     Returns:
         bytes: Konten file ``.xlsx`` siap-download. Disimpan ke
@@ -219,6 +250,14 @@ def export_excel(kelas=None, dicetak_oleh=None, mata_pelajaran=None):
         query = query.filter(Siswa.kelas == kelas)
     if mata_pelajaran:
         query = query.filter(Nilai.mata_pelajaran == mata_pelajaran)
+    if guru_id is not None:
+        query = query.filter(Nilai.guru_id == guru_id)
+    if siswa_id is not None:
+        query = query.filter(Nilai.siswa_id == siswa_id)
+    if status_lulus == 'lulus':
+        query = query.filter(Nilai.status_lulus.is_(True))
+    elif status_lulus == 'tidak_lulus':
+        query = query.filter(Nilai.status_lulus.is_(False))
     data_nilai = query.order_by(Siswa.kelas, Siswa.nama).all()
 
     # === 3. Style constants (dideklarasikan di tengah untuk keterbacaan) ===
@@ -249,11 +288,22 @@ def export_excel(kelas=None, dicetak_oleh=None, mata_pelajaran=None):
     title_cell.font = title_font
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    # === 6. Row 2: Info (kelas, mapel, tanggal, pencetak) ===
+    # === 6. Row 2: Info (kelas, mapel, filter tambahan, tanggal, pencetak) ===
     label_kelas = kelas if kelas else "Semua Kelas"
     info_text = f"Kelas: {label_kelas}"
     if mata_pelajaran:
         info_text += f" | Mata Pelajaran: {mata_pelajaran}"
+    # Tambahkan info filter tambahan (guru, siswa, status) jika ada.
+    if filter_info:
+        guru_label = filter_info.get('guru')
+        siswa_label = filter_info.get('siswa')
+        status_label = filter_info.get('status')
+        if guru_label:
+            info_text += f" | Guru: {guru_label}"
+        if siswa_label:
+            info_text += f" | Siswa: {siswa_label}"
+        if status_label:
+            info_text += f" | Status: {status_label}"
     info_text += f" | Tanggal: {now_jakarta().strftime('%d/%m/%Y %H:%M')}"
     if dicetak_oleh:
         info_text += f" | Dicetak oleh: {dicetak_oleh}"

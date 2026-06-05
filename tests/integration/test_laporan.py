@@ -11,6 +11,7 @@ WeasyPrint di-mock via autouse fixture di tests/integration/conftest.py.
 import pytest
 
 from app.models.nilai import Nilai
+from app.models.guru import Guru
 
 
 class TestLaporanPDF:
@@ -336,3 +337,344 @@ class TestLaporanRoleBased:
         response = login_guru.get('/laporan/pdf/kelas/X-IPA-1', follow_redirects=False)
         assert response.status_code == 302
         assert '/laporan' in response.headers['Location']
+
+
+# ===========================================================================
+# Filter Lanjutan (guru / mapel / kelas / siswa / status_lulus)
+# ===========================================================================
+
+class TestFilterLanjutanEndpoints:
+    """Menguji endpoint filter baru: /laporan/api/* dan /laporan/pdf/filter.
+
+    Mencakup:
+    - AJAX endpoints untuk cascading dropdown
+    - Filter multi-kriteria di PDF & Excel
+    - Filter preview di halaman index
+    """
+
+    def test_api_guru_returns_active_guru(self, login_admin, sample_guru):
+        """GET /laporan/api/guru → JSON list of active guru."""
+        response = login_admin.get('/laporan/api/guru')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert len(data) == 2  # sample_guru has 2 guru
+        for g in data:
+            assert 'id' in g
+            assert 'nama_guru' in g
+            assert 'mata_pelajaran' in g
+
+    def test_api_mata_pelajaran_returns_distinct(self, login_admin, sample_nilai):
+        """GET /laporan/api/mata-pelajaran → distinct mapel."""
+        response = login_admin.get('/laporan/api/mata-pelajaran')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'Matematika' in data
+        assert 'Bahasa Indonesia' in data
+
+    def test_api_mata_pelajaran_filtered_by_guru(self, login_admin, sample_guru, sample_nilai):
+        """GET /laporan/api/mata-pelajaran?guru_id=X → mapel hanya untuk guru tsb."""
+        guru_mat = sample_guru[0]  # Matematika
+        response = login_admin.get(f'/laporan/api/mata-pelajaran?guru_id={guru_mat.id}')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data == ['Matematika']
+
+    def test_api_kelas_returns_distinct(self, login_admin, sample_siswa, sample_nilai):
+        """GET /laporan/api/kelas → distinct kelas dari siswa yang punya nilai."""
+        response = login_admin.get('/laporan/api/kelas')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert 'X-IPA-1' in data
+        assert 'X-IPA-2' in data
+
+    def test_api_kelas_filtered_by_mapel(self, login_admin, sample_siswa, sample_nilai):
+        """GET /laporan/api/kelas?mata_pelajaran=X → kelas terfilter."""
+        response = login_admin.get('/laporan/api/kelas?mata_pelajaran=Matematika')
+        data = response.get_json()
+        assert 'X-IPA-1' in data
+        assert 'X-IPA-2' in data
+
+    def test_api_siswa_filtered_by_kelas(self, login_admin, sample_siswa, sample_nilai):
+        """GET /laporan/api/siswa?kelas=X → siswa di kelas tsb."""
+        response = login_admin.get('/laporan/api/siswa?kelas=X-IPA-1')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert len(data) == 2  # 2 siswa di X-IPA-1
+        for s in data:
+            assert s['kelas'] == 'X-IPA-1'
+
+    def test_api_guru_blocked_for_siswa(self, login_siswa):
+        """Siswa → 403 di semua /laporan/api/*."""
+        response = login_siswa.get('/laporan/api/guru')
+        assert response.status_code == 403
+
+    def test_api_mapel_guru_auto_scoped(self, login_guru, sample_nilai):
+        """Guru akses /laporan/api/mata-pelajaran → auto-scope ke mapel guru."""
+        response = login_guru.get('/laporan/api/mata-pelajaran')
+        assert response.status_code == 200
+        data = response.get_json()
+        # Guru Matematika hanya boleh lihat Matematika
+        assert data == ['Matematika']
+
+
+class TestFilterPDF:
+    """Menguji endpoint /laporan/pdf/filter (filter multi-kriteria)."""
+
+    def test_pdf_filter_kelas_only(self, login_admin, sample_nilai):
+        """GET /laporan/pdf/filter?kelas=X-IPA-1 → PDF (backward compat style)."""
+        response = login_admin.get('/laporan/pdf/filter?kelas=X-IPA-1')
+        assert response.status_code == 200
+        assert response.content_type == 'application/pdf'
+        assert response.data.startswith(b'%PDF-')
+
+    def test_pdf_filter_kelas_dan_mapel(self, login_admin, sample_siswa, sample_nilai):
+        """GET /laporan/pdf/filter?kelas=X-IPA-1&mata_pelajaran=Matematika → PDF."""
+        response = login_admin.get(
+            '/laporan/pdf/filter?kelas=X-IPA-1&mata_pelajaran=Matematika'
+        )
+        assert response.status_code == 200
+        assert response.content_type == 'application/pdf'
+        # Filename harus reflect filters
+        cd = response.headers.get('Content-Disposition', '')
+        assert 'X-IPA-1' in cd
+        assert 'Matematika' in cd
+
+    def test_pdf_filter_status_lulus(self, login_admin, sample_siswa, sample_nilai):
+        """GET /laporan/pdf/filter dengan status_lulus=lulus → PDF."""
+        response = login_admin.get(
+            '/laporan/pdf/filter?kelas=X-IPA-1&mata_pelajaran=Matematika&status_lulus=lulus'
+        )
+        assert response.status_code == 200
+        cd = response.headers.get('Content-Disposition', '')
+        assert 'lulus' in cd
+
+    def test_pdf_filter_tanpa_kelas_redirect(self, login_admin, sample_nilai):
+        """PDF filter tanpa kelas → redirect (kelas wajib)."""
+        response = login_admin.get(
+            '/laporan/pdf/filter?mata_pelajaran=Matematika',
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+        assert '/laporan' in response.headers['Location']
+
+    def test_pdf_filter_tidak_ada_data_redirect(self, login_admin, sample_siswa, db):
+        """PDF filter dengan filter yang tidak match → redirect."""
+        response = login_admin.get(
+            '/laporan/pdf/filter?kelas=X-IPA-1&mata_pelajaran=Tidak%20Ada',
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+    def test_pdf_filter_invalid_guru_redirect(self, login_admin, sample_guru, sample_nilai, db):
+        """PDF filter dengan guru_id soft-deleted → redirect dengan flash."""
+        # Soft-delete guru
+        sample_guru[0].soft_delete()
+        db.session.commit()
+        response = login_admin.get(
+            f'/laporan/pdf/filter?kelas=X-IPA-1&guru_id={sample_guru[0].id}',
+            follow_redirects=False,
+        )
+        assert response.status_code == 302
+
+    def test_pdf_filter_invalid_status_ignored(self, login_admin, sample_nilai):
+        """Status_lulus invalid diabaikan (treated as None)."""
+        response = login_admin.get(
+            '/laporan/pdf/filter?kelas=X-IPA-1&status_lulus=invalid_value'
+        )
+        assert response.status_code == 200
+
+    def test_siswa_tidak_boleh_pdf_filter(self, login_siswa):
+        """Siswa → 403 di /laporan/pdf/filter."""
+        response = login_siswa.get('/laporan/pdf/filter?kelas=X-IPA-1')
+        assert response.status_code == 403
+
+    def test_pdf_filter_audit_log(self, login_admin, sample_nilai, db):
+        """Generate PDF filter harus audit log dengan info filter lengkap."""
+        from app.models.audit_log import AuditLog
+        response = login_admin.get(
+            '/laporan/pdf/filter?kelas=X-IPA-1&mata_pelajaran=Matematika&guru_id=1&status_lulus=lulus'
+        )
+        assert response.status_code == 200
+        log = AuditLog.query.filter_by(action='PRINT_PDF').order_by(AuditLog.id.desc()).first()
+        assert log is not None
+        assert 'kelas=X-IPA-1' in log.description
+        assert 'mapel=Matematika' in log.description
+
+
+class TestFilterExcel:
+    """Menguji endpoint /laporan/excel dengan filter multi-kriteria."""
+
+    def test_excel_filter_guru(self, login_admin, sample_guru, sample_nilai):
+        """Excel dengan filter guru_id → filename mengandung guru filter."""
+        guru = sample_guru[0]
+        response = login_admin.get(f'/laporan/excel?guru_id={guru.id}')
+        assert response.status_code == 200
+        assert 'spreadsheetml' in response.content_type
+
+    def test_excel_filter_status_lulus(self, login_admin, sample_nilai):
+        """Excel dengan filter status_lulus → filename mengandung status."""
+        response = login_admin.get('/laporan/excel?status_lulus=lulus')
+        assert response.status_code == 200
+        cd = response.headers.get('Content-Disposition', '')
+        assert 'lulus' in cd
+
+    def test_excel_filter_invalid_status_ignored(self, login_admin, sample_nilai):
+        """Excel dengan status_lulus invalid → tetap 200."""
+        response = login_admin.get('/laporan/excel?status_lulus=invalid')
+        assert response.status_code == 200
+
+    def test_excel_audit_log_contains_filters(self, login_admin, sample_nilai, db):
+        """Excel audit log harus menyertakan info filter."""
+        from app.models.audit_log import AuditLog
+        response = login_admin.get(
+            '/laporan/excel?kelas=X-IPA-1&mata_pelajaran=Matematika&status_lulus=lulus'
+        )
+        assert response.status_code == 200
+        log = AuditLog.query.filter_by(action='EXPORT_EXCEL').order_by(AuditLog.id.desc()).first()
+        assert log is not None
+        assert 'kelas=X-IPA-1' in log.description
+        assert 'status=lulus' in log.description
+
+
+class TestFilterIndexPage:
+    """Menguji halaman /laporan/rekap-kelas dengan filter applied."""
+
+    def test_index_no_filter_shows_legacy_cards(self, login_admin, sample_nilai):
+        """Tanpa filter → tampilkan 2 kartu legacy + section filter."""
+        response = login_admin.get('/laporan/rekap-kelas')
+        assert response.status_code == 200
+        body = response.data.decode('utf-8')
+        # Section filter
+        assert 'Laporan Lanjutan dengan Filter' in body
+        assert 'Terapkan Filter' in body
+        # Legacy cards
+        assert 'Akses Cepat' in body
+        assert 'Pilih Kelas' in body
+
+    def test_index_with_filter_shows_preview(self, login_admin, sample_nilai):
+        """Dengan filter → preview table muncul, statistik cards muncul."""
+        response = login_admin.get(
+            '/laporan/rekap-kelas?kelas=X-IPA-1&mata_pelajaran=Matematika&status_lulus=lulus'
+        )
+        assert response.status_code == 200
+        body = response.data.decode('utf-8')
+        # Preview section
+        assert 'Preview Data' in body
+        # Statistik cards
+        assert 'Total Record' in body
+        assert 'Rata-rata' in body
+        assert 'Lulus' in body
+        assert 'Tidak Lulus' in body
+        # Action buttons
+        assert 'btnCetakPdfFilter' in body
+        assert 'btnExportExcelFilter' in body
+
+    def test_index_guru_mapel_locked(self, login_guru, guru_user, sample_nilai):
+        """Guru akses index → mapel dropdown disabled, banner info tampil."""
+        response = login_guru.get('/laporan/rekap-kelas')
+        assert response.status_code == 200
+        body = response.data.decode('utf-8')
+        # Banner info mapel scope
+        assert 'mata pelajaran' in body
+        assert 'Matematika' in body
+        # Mapel dropdown disabled
+        assert 'id="filterMapel"' in body
+        # Guru TIDAK boleh lihat dropdown guru (admin only feature)
+        assert 'id="filterGuru"' not in body
+
+    def test_index_empty_result_warning(self, login_admin, sample_nilai):
+        """Filter tanpa hasil → tampilkan warning, tombol disabled."""
+        response = login_admin.get(
+            '/laporan/rekap-kelas?kelas=X-IPA-1&mata_pelajaran=Tidak%20Ada'
+        )
+        assert response.status_code == 200
+        body = response.data.decode('utf-8')
+        assert 'Tidak ada data nilai' in body
+        # Tombol cetak/export di-disable
+        assert 'id="btnCetakPdfFilter" disabled' in body or 'btnCetakPdfFilter' in body
+        assert 'id="btnExportExcelFilter" disabled' in body or 'btnExportExcelFilter' in body
+
+    def test_index_invalid_status_ignored(self, login_admin, sample_nilai):
+        """Status_lulus invalid diabaikan, tidak error 500."""
+        response = login_admin.get('/laporan/rekap-kelas?status_lulus=invalid')
+        assert response.status_code == 200
+
+
+class TestFilterModelHelpers:
+    """Menguji helper classmethod di model."""
+
+    def test_nilai_daftar_mata_pelajaran(self, sample_nilai):
+        """Nilai.daftar_mata_pelajaran() returns distinct mapel."""
+        from app.models.nilai import Nilai as NilaiModel
+        result = NilaiModel.daftar_mata_pelajaran()
+        assert 'Matematika' in result
+        assert 'Bahasa Indonesia' in result
+        assert len(result) == 2
+
+    def test_nilai_daftar_mata_pelajaran_filtered(self, sample_guru, sample_nilai):
+        """Nilai.daftar_mata_pelajaran(guru_id=X) filters by guru."""
+        from app.models.nilai import Nilai as NilaiModel
+        guru = sample_guru[0]  # Matematika
+        result = NilaiModel.daftar_mata_pelajaran(guru_id=guru.id)
+        assert result == ['Matematika']
+
+    def test_guru_daftar_guru_aktif(self, sample_guru):
+        """Guru.daftar_guru_aktif() returns active guru sorted by nama."""
+        result = Guru.daftar_guru_aktif()
+        assert len(result) == 2
+        # Sorted by nama_guru
+        assert result[0].nama_guru < result[1].nama_guru
+
+    def test_guru_daftar_guru_aktif_excludes_soft_deleted(self, sample_guru, db):
+        """daftar_guru_aktif() excludes soft-deleted guru."""
+        sample_guru[0].soft_delete()
+        db.session.commit()
+        result = Guru.daftar_guru_aktif()
+        assert len(result) == 1
+        assert result[0].id == sample_guru[1].id
+
+
+class TestFilterServiceLayer:
+    """Menguji service layer dengan filter params."""
+
+    def test_generate_laporan_pdf_with_all_filters(self, app, sample_siswa, sample_nilai, sample_guru):
+        """generate_laporan_pdf() menerima semua filter params."""
+        from app.services.laporan_service import generate_laporan_pdf
+        with app.app_context():
+            pdf_bytes = generate_laporan_pdf(
+                'X-IPA-1',
+                mata_pelajaran='Matematika',
+                guru_id=sample_guru[0].id,
+                status_lulus='lulus',
+                filter_info={'guru': 'Test', 'status': 'Lulus'},
+            )
+            assert isinstance(pdf_bytes, bytes)
+            assert len(pdf_bytes) > 0
+
+    def test_export_excel_with_all_filters(self, app, sample_siswa, sample_nilai, sample_guru):
+        """export_excel() menerima semua filter params."""
+        from app.services.laporan_service import export_excel
+        with app.app_context():
+            excel_bytes = export_excel(
+                kelas='X-IPA-1',
+                mata_pelajaran='Matematika',
+                guru_id=sample_guru[0].id,
+                status_lulus='lulus',
+                filter_info={'guru': 'Test', 'status': 'Lulus'},
+            )
+            assert isinstance(excel_bytes, bytes)
+            assert excel_bytes[:2] == b'PK'
+
+    def test_backward_compat_generate_pdf(self, app, sample_siswa, sample_nilai):
+        """generate_laporan_pdf() dengan 1 arg (legacy) tetap jalan."""
+        from app.services.laporan_service import generate_laporan_pdf
+        with app.app_context():
+            pdf_bytes = generate_laporan_pdf('X-IPA-1')
+            assert isinstance(pdf_bytes, bytes)
+
+    def test_backward_compat_export_excel(self, app, sample_siswa, sample_nilai):
+        """export_excel() tanpa arg (legacy) tetap jalan."""
+        from app.services.laporan_service import export_excel
+        with app.app_context():
+            excel_bytes = export_excel()
+            assert isinstance(excel_bytes, bytes)

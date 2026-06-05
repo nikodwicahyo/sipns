@@ -217,3 +217,32 @@ class Nilai(db.Model):
             'status_lulus': self.status_lulus,
             'is_locked': self.is_locked,
         }
+
+    @classmethod
+    def daftar_mata_pelajaran(cls, guru_id=None):
+        """Ambil daftar mata pelajaran unik yang punya data nilai.
+
+        Berguna untuk populate dropdown filter mata pelajaran di UI
+        laporan. Hanya mengambil mapel yang benar-benar punya record
+        nilai (distinct dari JOIN siswa aktif), sehingga dropdown
+        tidak menampilkan mapel kosong.
+
+        Args:
+            guru_id (int, optional): Filter tambahan berdasarkan guru.
+                Jika diisi, hanya mapel yang diampu guru tersebut yang
+                dikembalikan. Default ``None`` (semua mapel).
+
+        Returns:
+            list[str]: Daftar nama mata pelajaran unik, terurut alfabetis.
+            Bisa kosong jika belum ada nilai.
+        """
+        from app.models.siswa import Siswa
+        query = (
+            db.session.query(cls.mata_pelajaran)
+            .join(Siswa, cls.siswa_id == Siswa.id)
+            .filter(Siswa.deleted_at.is_(None))
+        )
+        if guru_id is not None:
+            query = query.filter(cls.guru_id == guru_id)
+        result = query.distinct().order_by(cls.mata_pelajaran).all()
+        return [r[0] for r in result]

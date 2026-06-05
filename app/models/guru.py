@@ -104,3 +104,22 @@ class Guru(db.Model):
             'nama_guru': self.nama_guru,
             'mata_pelajaran': self.mata_pelajaran,
         }
+
+    @classmethod
+    def daftar_guru_aktif(cls):
+        """Ambil daftar guru aktif (exclude soft-deleted), terurut nama.
+
+        Dipakai untuk populate dropdown filter guru di halaman laporan.
+        Hanya menampilkan guru yang masih aktif sehingga user tidak
+        bisa memfilter ke guru yang sudah dihapus.
+
+        Returns:
+            list[Guru]: List instance Guru, ter alfabetis by ``nama_guru``.
+            Bisa kosong jika belum ada guru.
+        """
+        return (
+            cls.query
+            .filter(cls.deleted_at.is_(None))
+            .order_by(cls.nama_guru)
+            .all()
+        )

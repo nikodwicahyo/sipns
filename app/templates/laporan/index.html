@@ -5,89 +5,468 @@
     <h3><i class="bi bi-file-earmark-pdf"></i> Laporan & Ekspor</h3>
 </div>
 
-{% if mapel_filter %}
+{% if mapel_scope %}
 <div class="alert alert-info d-flex align-items-center" role="alert">
     <i class="bi bi-info-circle-fill me-2"></i>
     <div>
         Anda login sebagai <strong>Guru</strong>. Laporan & ekspor hanya menampilkan data nilai
-        untuk mata pelajaran <strong>{{ mapel_filter }}</strong> sesuai akun Anda.
+        untuk mata pelajaran <strong>{{ mapel_scope }}</strong> sesuai akun Anda.
     </div>
 </div>
 {% endif %}
 
-{% if not kelas_list %}
-<div class="alert alert-warning" role="alert">
-    <i class="bi bi-exclamation-triangle-fill"></i>
-    {% if mapel_filter %}
-    Belum ada data nilai untuk mata pelajaran <strong>{{ mapel_filter }}</strong>.
-    Silakan input nilai terlebih dahulu melalui modul <em>Input Nilai</em>.
-    {% else %}
-    Belum ada data nilai yang dapat dicetak/diexpor. Silakan input nilai terlebih dahulu.
-    {% endif %}
-</div>
-{% endif %}
-
-<div class="row g-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header"><h5>Cetak PDF Rekap Kelas</h5></div>
-            <div class="card-body">
-                <p class="text-muted">Generate laporan rekap nilai seluruh siswa dalam satu kelas.</p>
-                <div class="mb-3">
-                    <label class="form-label">Pilih Kelas</label>
-                    <select class="form-select" id="kelasPdf" {% if not kelas_list %}disabled{% endif %}>
-                        <option value="">-- Pilih Kelas --</option>
-                        {% for k in kelas_list %}
-                        <option value="{{ k }}">{{ k }}</option>
+{# ============================================================================ #}
+{# SECTION 1: LAPORAN LANJUTAN DENGAN FILTER                                #}
+{# ============================================================================ #}
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-funnel"></i> Laporan Lanjutan dengan Filter
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('laporan.index') }}" id="filterForm">
+            <div class="row g-3">
+                {# Filter Guru (admin only) #}
+                {% if guru_list %}
+                <div class="col-md-6 col-lg-3">
+                    <label class="form-label">Guru</label>
+                    <select class="form-select" name="guru_id" id="filterGuru" data-cascade="guru">
+                        <option value="">-- Semua Guru --</option>
+                        {% for g in guru_list %}
+                        <option value="{{ g.id }}" {% if filters.guru_id == g.id %}selected{% endif %}>
+                            {{ g.nama_guru }} ({{ g.mata_pelajaran }})
+                        </option>
                         {% endfor %}
                     </select>
                 </div>
-                <button class="btn btn-primary" onclick="cetakPdf()" id="btnCetakPdf" disabled>
-                    <i class="bi bi-file-earmark-pdf"></i> Cetak PDF
+                {% endif %}
+
+                {# Filter Mata Pelajaran #}
+                <div class="col-md-6 col-lg-3">
+                    <label class="form-label">Mata Pelajaran</label>
+                    <select class="form-select" name="mata_pelajaran" id="filterMapel" data-cascade="mapel"
+                            {% if mapel_scope %}disabled{% endif %}>
+                        <option value="">-- Semua Mapel --</option>
+                        {% for m in mapel_list %}
+                        <option value="{{ m }}" {% if filters.mata_pelajaran == m %}selected{% endif %}>{{ m }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if mapel_scope %}
+                    <input type="hidden" name="mata_pelajaran" value="{{ mapel_scope }}">
+                    <small class="text-muted"><i class="bi bi-lock"></i> Terkunci: {{ mapel_scope }}</small>
+                    {% endif %}
+                </div>
+
+                {# Filter Kelas #}
+                <div class="col-md-6 col-lg-2">
+                    <label class="form-label">Kelas</label>
+                    <select class="form-select" name="kelas" id="filterKelas" data-cascade="kelas">
+                        <option value="">-- Semua Kelas --</option>
+                        {% for k in kelas_list %}
+                        <option value="{{ k }}" {% if filters.kelas == k %}selected{% endif %}>{{ k }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                {# Filter Siswa #}
+                <div class="col-md-6 col-lg-2">
+                    <label class="form-label">Siswa</label>
+                    <select class="form-select" name="siswa_id" id="filterSiswa" data-cascade="siswa">
+                        <option value="">-- Semua Siswa --</option>
+                        {% if filters.siswa_id %}
+                        <option value="{{ filters.siswa_id }}" selected>ID: {{ filters.siswa_id }} (saat ini)</option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                {# Filter Status Kelulusan #}
+                <div class="col-md-6 col-lg-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status_lulus" id="filterStatus">
+                        <option value="" {% if not filters.status_lulus %}selected{% endif %}>Semua</option>
+                        <option value="lulus" {% if filters.status_lulus == 'lulus' %}selected{% endif %}>Lulus</option>
+                        <option value="tidak_lulus" {% if filters.status_lulus == 'tidak_lulus' %}selected{% endif %}>Tidak Lulus</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-funnel-fill"></i> Terapkan Filter
                 </button>
+                <a href="{{ url_for('laporan.index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset Filter
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ============================================================================ #}
+{# SECTION 2: PREVIEW HASIL FILTER (hanya muncul jika ada filter aktif)      #}
+{# ============================================================================ #}
+{% if filters_applied %}
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="card text-bg-primary">
+            <div class="card-body">
+                <h6 class="card-title">Total Record</h6>
+                <h3 class="mb-0">{{ statistik.total }}</h3>
             </div>
         </div>
     </div>
-
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header"><h5>Ekspor Excel</h5></div>
+    <div class="col-md-3">
+        <div class="card text-bg-info">
             <div class="card-body">
-                <p class="text-muted">Download data nilai dalam format Excel (.xlsx).</p>
-                <div class="mb-3">
-                    <label class="form-label">Filter Kelas (Opsional)</label>
-                    <select class="form-select" id="kelasExcel" {% if not kelas_list %}disabled{% endif %}>
-                        <option value="">-- Semua Kelas --</option>
-                        {% for k in kelas_list %}
-                        <option value="{{ k }}">{{ k }}</option>
-                        {% endfor %}
-                    </select>
+                <h6 class="card-title">Rata-rata</h6>
+                <h3 class="mb-0">{{ statistik.rata_rata }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <h6 class="card-title">Lulus</h6>
+                <h3 class="mb-0">{{ statistik.jumlah_lulus }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-danger">
+            <div class="card-body">
+                <h6 class="card-title">Tidak Lulus</h6>
+                <h3 class="mb-0">{{ statistik.jumlah_tidak_lulus }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-table"></i> Preview Data ({{ data_nilai|length }} baris)</h5>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-danger btn-sm" id="btnCetakPdfFilter" {% if not data_nilai %}disabled{% endif %}>
+                <i class="bi bi-file-earmark-pdf"></i> Cetak PDF
+            </button>
+            <button type="button" class="btn btn-success btn-sm" id="btnExportExcelFilter" {% if not data_nilai %}disabled{% endif %}>
+                <i class="bi bi-file-earmark-excel"></i> Export Excel
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if not data_nilai %}
+        <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            Tidak ada data nilai yang sesuai dengan filter yang dipilih. Coba ubah filter atau reset.
+        </div>
+        {% else %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover datatable" id="previewTable">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>NIS</th>
+                        <th>Nama</th>
+                        <th>Kelas</th>
+                        <th>Mata Pelajaran</th>
+                        <th>Guru</th>
+                        <th>Tugas</th>
+                        <th>UTS</th>
+                        <th>UAS</th>
+                        <th>Nilai Akhir</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for n in data_nilai %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ n.siswa.nis if n.siswa else '-' }}</td>
+                        <td>{{ n.siswa.nama if n.siswa else '-' }}</td>
+                        <td>{{ n.siswa.kelas if n.siswa else '-' }}</td>
+                        <td>{{ n.mata_pelajaran }}</td>
+                        <td>{{ n.guru.nama_guru if n.guru else '-' }}</td>
+                        <td>{{ n.nilai_tugas }}</td>
+                        <td>{{ n.nilai_uts }}</td>
+                        <td>{{ n.nilai_uas }}</td>
+                        <td><strong>{{ n.nilai_akhir }}</strong></td>
+                        <td>
+                            {% if n.status_lulus is not none %}
+                                <span class="badge {% if n.status_lulus %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Lulus' if n.status_lulus else 'Tidak Lulus' }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{# ============================================================================ #}
+{# SECTION 3: KARTU LEGACY (PDF per kelas & Export Excel sederhana)         #}
+{# ============================================================================ #}
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-bookmark-star"></i> Akses Cepat (Tanpa Filter)</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Gunakan akses cepat di bawah ini jika tidak memerlukan filter tambahan. Pilih kelas, lalu klik tombol cetak/export.</p>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card border-primary">
+                    <div class="card-header"><h6 class="mb-0">Cetak PDF Rekap Kelas</h6></div>
+                    <div class="card-body">
+                        <p class="text-muted small">Generate laporan rekap nilai seluruh siswa dalam satu kelas (PDF).</p>
+                        <div class="mb-3">
+                            <label class="form-label small">Pilih Kelas</label>
+                            <select class="form-select form-select-sm" id="kelasPdf" {% if not legacy_kelas_list %}disabled{% endif %}>
+                                <option value="">-- Pilih Kelas --</option>
+                                {% for k in legacy_kelas_list %}
+                                <option value="{{ k }}">{{ k }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="cetakPdfLegacy()" id="btnCetakPdf" disabled>
+                            <i class="bi bi-file-earmark-pdf"></i> Cetak PDF
+                        </button>
+                    </div>
                 </div>
-                <button class="btn btn-success" onclick="eksporExcel()" {% if not kelas_list %}disabled{% endif %}>
-                    <i class="bi bi-file-earmark-excel"></i> Download Excel
-                </button>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-success">
+                    <div class="card-header"><h6 class="mb-0">Ekspor Excel</h6></div>
+                    <div class="card-body">
+                        <p class="text-muted small">Download data nilai dalam format Excel (.xlsx). Pilih kelas atau kosongkan untuk semua.</p>
+                        <div class="mb-3">
+                            <label class="form-label small">Filter Kelas (Opsional)</label>
+                            <select class="form-select form-select-sm" id="kelasExcel" {% if not legacy_kelas_list %}disabled{% endif %}>
+                                <option value="">-- Semua Kelas --</option>
+                                {% for k in legacy_kelas_list %}
+                                <option value="{{ k }}">{{ k }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button class="btn btn-success btn-sm" onclick="eksporExcelLegacy()" {% if not legacy_kelas_list %}disabled{% endif %}>
+                            <i class="bi bi-file-earmark-excel"></i> Download Excel
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
-    document.getElementById('kelasPdf').addEventListener('change', function() {
-        document.getElementById('btnCetakPdf').disabled = !this.value;
-    });
+(function () {
+    'use strict';
 
-    function cetakPdf() {
-        const kelas = document.getElementById('kelasPdf').value;
+    // ========================================================================
+    // CASCADING DROPDOWN HANDLERS
+    // ========================================================================
+
+    // Fungsi untuk reset dropdown dependent.
+    function resetSelect(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = '<option value="">-- Memuat... --</option>';
+    }
+
+    function populateSelect(id, placeholder, items) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var html = '<option value="">' + placeholder + '</option>';
+        items.forEach(function (item) {
+            var value = item.value !== undefined ? item.value : item;
+            var label = item.label !== undefined ? item.label : item;
+            html += '<option value="' + value + '">' + label + '</option>';
+        });
+        el.innerHTML = html;
+    }
+
+    // Handler saat Guru berubah → reset & reload Mapel, Kelas, Siswa.
+    var guruEl = document.getElementById('filterGuru');
+    if (guruEl) {
+        guruEl.addEventListener('change', function () {
+            var guruId = this.value;
+            // Reset dependent dropdowns.
+            resetSelect('filterMapel');
+            resetSelect('filterKelas');
+            resetSelect('filterSiswa');
+            populateSelect('filterMapel', '-- Semua Mapel --', []);
+            populateSelect('filterKelas', '-- Semua Kelas --', []);
+            populateSelect('filterSiswa', '-- Semua Siswa --', []);
+
+            // Fetch mapel & kelas paralel.
+            var url = '/laporan/api/mata-pelajaran';
+            if (guruId) url += '?guru_id=' + encodeURIComponent(guruId);
+            fetch(url).then(function (r) { return r.json(); })
+                .then(function (data) {
+                    populateSelect('filterMapel', '-- Semua Mapel --', data);
+                }).catch(function () {
+                    populateSelect('filterMapel', '-- Semua Mapel --', []);
+                });
+            fetchKelas(guruId, '', '');
+        });
+    }
+
+    // Handler saat Mapel berubah → reset & reload Kelas, Siswa.
+    var mapelEl = document.getElementById('filterMapel');
+    if (mapelEl && !mapelEl.disabled) {
+        mapelEl.addEventListener('change', function () {
+            var guruId = guruEl ? guruEl.value : '';
+            var mapel = this.value;
+            resetSelect('filterKelas');
+            resetSelect('filterSiswa');
+            populateSelect('filterKelas', '-- Semua Kelas --', []);
+            populateSelect('filterSiswa', '-- Semua Siswa --', []);
+            fetchKelas(guruId, mapel, '');
+        });
+    }
+
+    // Handler saat Kelas berubah → reload Siswa.
+    var kelasEl = document.getElementById('filterKelas');
+    if (kelasEl) {
+        kelasEl.addEventListener('change', function () {
+            var guruId = guruEl ? guruEl.value : '';
+            var mapel = mapelEl && !mapelEl.disabled ? mapelEl.value : '';
+            var kelas = this.value;
+            resetSelect('filterSiswa');
+            populateSelect('filterSiswa', '-- Semua Siswa --', []);
+            fetchSiswa(guruId, mapel, kelas);
+        });
+    }
+
+    function fetchKelas(guruId, mapel, kelas) {
+        var url = '/laporan/api/kelas';
+        var params = [];
+        if (guruId) params.push('guru_id=' + encodeURIComponent(guruId));
+        if (mapel) params.push('mata_pelajaran=' + encodeURIComponent(mapel));
+        if (params.length) url += '?' + params.join('&');
+        fetch(url).then(function (r) { return r.json(); })
+            .then(function (data) {
+                populateSelect('filterKelas', '-- Semua Kelas --', data);
+            }).catch(function () {
+                populateSelect('filterKelas', '-- Semua Kelas --', []);
+            });
+    }
+
+    function fetchSiswa(guruId, mapel, kelas) {
+        var url = '/laporan/api/siswa';
+        var params = [];
+        if (guruId) params.push('guru_id=' + encodeURIComponent(guruId));
+        if (mapel) params.push('mata_pelajaran=' + encodeURIComponent(mapel));
+        if (kelas) params.push('kelas=' + encodeURIComponent(kelas));
+        if (params.length) url += '?' + params.join('&');
+        fetch(url).then(function (r) { return r.json(); })
+            .then(function (data) {
+                var items = data.map(function (s) {
+                    return { value: s.id, label: s.nis + ' - ' + s.nama + ' (' + s.kelas + ')' };
+                });
+                populateSelect('filterSiswa', '-- Semua Siswa --', items);
+            }).catch(function () {
+                populateSelect('filterSiswa', '-- Semua Siswa --', []);
+            });
+    }
+
+    // ========================================================================
+    // BUILD QUERY STRING DARI FORM FILTER (untuk Cetak PDF & Export Excel)
+    // ========================================================================
+
+    function buildFilterQueryString() {
+        var form = document.getElementById('filterForm');
+        if (!form) return '';
+        var params = [];
+        Array.from(form.elements).forEach(function (el) {
+            if (!el.name) return;
+            if (el.disabled) return; // skip disabled (mis. mapel_scope hidden)
+            if (el.value === '' || el.value === null) return;
+            // Skip submit & button elements.
+            if (el.type === 'submit' || el.type === 'button') return;
+            params.push(encodeURIComponent(el.name) + '=' + encodeURIComponent(el.value));
+        });
+        return params.join('&');
+    }
+
+    // ========================================================================
+    // TOMBOL CETAK PDF & EXPORT EXCEL (filter-based)
+    // ========================================================================
+
+    var btnCetakPdfFilter = document.getElementById('btnCetakPdfFilter');
+    if (btnCetakPdfFilter) {
+        btnCetakPdfFilter.addEventListener('click', function () {
+            var qs = buildFilterQueryString();
+            if (!qs) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Filter Kosong',
+                    text: 'Pilih minimal satu filter (kelas/mapel/dll) sebelum mencetak PDF.',
+                });
+                return;
+            }
+            // PDF butuh kelas — jika tidak ada kelas, kasih warning.
+            if (qs.indexOf('kelas=') === -1) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Kelas Belum Dipilih',
+                    text: 'Untuk cetak PDF rekap, kelas wajib dipilih. (Untuk export Excel tanpa kelas, gunakan tombol Export Excel.)',
+                });
+                return;
+            }
+            window.open('/laporan/pdf/filter?' + qs, '_blank');
+        });
+    }
+
+    var btnExportExcelFilter = document.getElementById('btnExportExcelFilter');
+    if (btnExportExcelFilter) {
+        btnExportExcelFilter.addEventListener('click', function () {
+            var qs = buildFilterQueryString();
+            if (!qs) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Filter Kosong',
+                    text: 'Pilih minimal satu filter sebelum mengexport Excel.',
+                });
+                return;
+            }
+            window.location.href = '/laporan/excel?' + qs;
+        });
+    }
+
+    // ========================================================================
+    // LEGACY: Kartu "Pilih Kelas" (PDF & Excel tanpa filter)
+    // ========================================================================
+
+    var kelasPdfEl = document.getElementById('kelasPdf');
+    if (kelasPdfEl) {
+        kelasPdfEl.addEventListener('change', function () {
+            var btn = document.getElementById('btnCetakPdf');
+            if (btn) btn.disabled = !this.value;
+        });
+    }
+
+    window.cetakPdfLegacy = function () {
+        var kelas = document.getElementById('kelasPdf').value;
         if (kelas) {
             window.open('/laporan/pdf/kelas/' + encodeURIComponent(kelas), '_blank');
         }
-    }
+    };
 
-    function eksporExcel() {
-        const kelas = document.getElementById('kelasExcel').value;
-        const url = kelas ? '/laporan/excel?kelas=' + encodeURIComponent(kelas) : '/laporan/excel';
+    window.eksporExcelLegacy = function () {
+        var kelas = document.getElementById('kelasExcel').value;
+        var url = kelas ? '/laporan/excel?kelas=' + encodeURIComponent(kelas) : '/laporan/excel';
         window.location.href = url;
-    }
+    };
+})();
 </script>
 {% endblock %}
