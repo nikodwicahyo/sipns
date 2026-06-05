@@ -218,15 +218,15 @@ git push
 3. **Connect a repository:** pilih repo SIPNS dari dropdown. Klik **Connect**.
 4. Render akan auto-detect `render.yaml` di root → preview service muncul:
    ```
-   ┌─────────────────────────────────────┐
-   │  sipns-web                          │
-   │  type: web | plan: free | region:   │
-   │  singapore                          │
-   │  ───────────────────────            │
-   │  Build:  bash build.sh              │
-   │  Start:  gunicorn ... wsgi:app      │
-   │  Health: /healthz                   │
-   └─────────────────────────────────────┘
+   ┌─────────────────────────────────────────────┐
+   │  sipns-web                                  │
+   │  type: web | plan: free | region: singapore │
+   │  ─────────────────────────                  │
+   │  Build:  bash build.sh                      │
+   │  Start:  flask db upgrade && flask seed &&  │
+   │          gunicorn ... wsgi:app              │
+   │  Health: /healthz                           │
+   └─────────────────────────────────────────────┘
    ```
 5. Klik **Apply** → Render mulai provisioning service.
 
@@ -254,7 +254,7 @@ Setelah blueprint applied, Anda perlu isi `DATABASE_URL`:
    ==> [2/3] Install system packages (WeasyPrint)...
    ==> [3/3] Install Python dependencies...
    ==> Build complete.
-   ==> Running pre-deploy command: flask db upgrade && flask seed
+   ==> Starting service with: flask db upgrade && flask seed && gunicorn --bind 0.0.0.0:$PORT ...
    INFO  [alembic.runtime.migration] Running upgrade  -> 9472af43883e, initial migration
    INFO  [alembic.runtime.migration] Running upgrade 9472af43883e -> 85cddd831f8c, ...
    INFO  [alembic.runtime.migration] Context impl MySQLImpl.
@@ -262,12 +262,11 @@ Setelah blueprint applied, Anda perlu isi `DATABASE_URL`:
    INFO  app.seed:Memulai proses seed data SIPNS...
    INFO  app.seed:Seed master data selesai: 1 admin, 3 guru, 10 siswa.
    INFO  app.seed:Seed nilai selesai: 24 record nilai untuk 10 siswa × 3 mapel.
-   ==> Pre-deploy complete.
-   ==> Starting service with: gunicorn --bind 0.0.0.0:$PORT --workers 1 --preload --timeout 60 ...
    [INFO] Starting gunicorn 23.0.0
    [INFO] Booting worker with pid: 42
    [INFO] Listening at: http://0.0.0.0:10000
    ```
+   > ⚠️ **CATATAN untuk Free Tier:** Render free tier **tidak mendukung `preDeployCommand`**, jadi `flask db upgrade && flask seed` digabung ke dalam `startCommand`. Keduanya idempotent (Alembic skip jika tidak ada migration baru; seed skip jika User sudah ada) — aman re-run setiap container start. Trade-off: tambah ~2-3 detik ke cold start (yang memang sudah 30-50 detik di free tier).
 3. **Build sukses** jika ada `Booting worker` + `Listening at: ...`.
 4. **Gagal?** Lihat [Troubleshooting](#8-troubleshooting).
 
@@ -358,7 +357,7 @@ git commit -m "feat: migration tambah kolom xyz"
 git push
 ```
 
-Render `preDeployCommand` (`flask db upgrade && flask seed`) akan auto-apply migration baru. `flask seed` idempotent → aman re-run.
+`startCommand` di `render.yaml` (`flask db upgrade && flask seed && gunicorn ...`) akan auto-apply migration baru setiap container start. `flask seed` idempotent → aman re-run.
 
 ---
 
@@ -456,6 +455,38 @@ Pastikan Anda pakai `ProductionConfig` (cek `FLASK_ENV=production` di env vars R
 1. Login TiDB Cloud → klik **Resume**.
 2. Tunggu ~30 detik sampai status **Active**.
 3. Trigger redeploy di Render (Settings → Manual Deploy) atau ping `/healthz` beberapa kali (Render health check akan auto-retry).
+
+### 8.11 Blueprint Error: "pre-deploy command is not supported for free tier services"
+
+**Penyebab:** Sejak akhir 2024, Render **menonaktifkan `preDeployCommand` di free tier** (fitur hanya untuk Starter+ plan). Jika `render.yaml` Anda masih punya `preDeployCommand:`, Apply akan error.
+
+**Fix:** File `render.yaml` di repo ini **sudah diperbaiki** — `preDeployCommand` dihapus dan `flask db upgrade && flask seed` digabung ke `startCommand`. Pastikan Anda sudah `git pull`/`git fetch` versi terbaru sebelum push.
+
+Verifikasi lokal:
+```bash
+# Seharusnya TIDAK ada preDeployCommand di output
+grep -i "preDeploy" render.yaml
+# Output kosong = OK. Kalau ada baris preDeployCommand, berarti file lama.
+```
+
+**Kenapa aman digabung ke startCommand?**
+- `flask db upgrade` → Alembic track state, no-op jika tidak ada migration baru.
+- `flask seed` → guard `if User.query.first(): return` di `app/seed.py`, no-op setelah data pertama.
+- Keduanya idempotent → aman re-run setiap container start, termasuk saat wake dari sleep.
+
+**Trade-off:** tambah ~2-3 detik ke cold start (yang memang sudah 30-50 detik di free tier).
+
+### 8.12 Blueprint Error: "Credit card required"
+
+**Penyebab:** Sejak akhir 2024, Render mewambahkan verifikasi credit card untuk semua akun baru (anti-abuse / crypto-mining prevention). Kartu **tidak di-charge** untuk free tier, hanya untuk verifikasi.
+
+**Fix (opsional):**
+- Tambahkan debit/credit card ke akun Render → https://dashboard.render.com/billing
+- Setelah verifikasi, Anda bisa create Blueprint/Web Service gratis seperti biasa.
+
+**Fix (alternatif tanpa kartu):**
+- Pakai Railway.app (sudah tidak dipakai di project ini, tapi opsi valid): $5/bulan credit, no CC untuk usage di bawah credit.
+- Pakai PythonAnywhere: 100% free, no CC, tapi paradigma deploy berbeda (WSGI file, bukan container).
 
 ---
 

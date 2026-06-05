@@ -1,14 +1,25 @@
 # render.yaml — Infrastructure-as-code untuk deploy SIPNS ke Render.
 #
+# CATATAN PENTING untuk free tier Render:
+#   - preDeployCommand TIDAK didukung di free tier (akan error "pre-deploy
+#     command is not supported for free tier services").
+#   - Solusi: jalankan `flask db upgrade && flask seed` sebagai bagian dari
+#     startCommand. Keduanya idempotent (Alembic skip jika tidak ada
+#     migration baru; seed skip jika User sudah ada), jadi aman re-run
+#     setiap container start.
+#   - trade-off: tambah ~2-3 detik ke cold start. Untuk free tier yang
+#     anyway sudah cold start 30-50 detik, ini acceptable.
+#
 # Cara pakai:
-#   1) Push repo ini ke GitHub (branch main).
+#   1) Push repo ke GitHub (branch main).
 #   2) Login ke https://render.com -> New -> Blueprint Instance.
-#   3) Pilih repo SIPNS -> Apply. Render akan membaca file ini.
-#   4) Setelah blueprint applied, masuk ke service "sipns-web" -> Environment.
+#   3) Pilih repo SIPNS -> Apply. Render membaca file ini.
+#   4) Setelah applied, masuk ke service "sipns-web" -> Environment.
 #   5) Edit "DATABASE_URL" dengan connection string TiDB Cloud Anda.
 #   6) Save Changes (auto-redeploy).
 #
 # Lihat docs/DEPLOY_RENDER_TIDB.md untuk tutorial lengkap step-by-step.
+# Lihat docs/DEPLOY_RAILWAY_TIDB.md untuk alternatif tanpa credit card.
 
 services:
   - type: web
@@ -18,8 +29,7 @@ services:
     region: singapore
     branch: main
     buildCommand: "bash build.sh"
-    preDeployCommand: "flask db upgrade && flask seed"
-    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --preload --timeout 60 --access-logfile - --error-logfile - --log-level info wsgi:app"
+    startCommand: "flask db upgrade && flask seed && gunicorn --bind 0.0.0.0:$PORT --workers 1 --preload --timeout 60 --access-logfile - --error-logfile - --log-level info wsgi:app"
     healthCheckPath: "/healthz"
     autoDeploy: true
     envVars:

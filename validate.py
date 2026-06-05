@@ -42,7 +42,7 @@ def main():
     print(f"    SESSION_COOKIE_SECURE = {app.config['SESSION_COOKIE_SECURE']}")
     print(f"    SSL in connect_args = {ssl}")
 
-    # 5. render.yaml structure
+    # 5. render.yaml structure (Free Tier compatible — no preDeployCommand)
     with open("render.yaml", "r") as f:
         data = yaml.safe_load(f)
     services = data.get("services", [])
@@ -50,8 +50,15 @@ def main():
     s = services[0]
     assert s["name"] == "sipns-web"
     assert s["buildCommand"] == "bash build.sh"
-    assert "flask db upgrade" in s["preDeployCommand"]
-    assert "flask seed" in s["preDeployCommand"]
+    # Free tier tidak support preDeployCommand (akan error di Apply).
+    # Migration & seed harus digabung ke startCommand.
+    assert "preDeployCommand" not in s, (
+        "preDeployCommand tidak didukung di free tier. "
+        "Hapus dari render.yaml — flask db upgrade && flask seed "
+        "sudah digabung ke startCommand."
+    )
+    assert "flask db upgrade" in s["startCommand"], "Migration harus di startCommand"
+    assert "flask seed" in s["startCommand"], "Seed harus di startCommand"
     assert "gunicorn" in s["startCommand"]
     assert "--workers 1" in s["startCommand"], "Single worker required for free tier RAM"
     assert "--preload" in s["startCommand"], "--preload required for cold start optimization"
@@ -59,9 +66,9 @@ def main():
     env_keys = {e["key"] for e in s["envVars"]}
     for required in ("FLASK_APP", "FLASK_ENV", "SECRET_KEY", "DATABASE_URL", "PYTHONUNBUFFERED"):
         assert required in env_keys, f"Missing env var: {required}"
-    print("[5] render.yaml structure OK")
+    print("[5] render.yaml structure OK (free tier compatible)")
     print(f"    service = {s['name']}, buildCommand = {s['buildCommand']}")
-    print(f"    startCommand = {s['startCommand']}")
+    print(f"    startCommand = {s['startCommand'][:90]}...")
     print(f"    envVars = {sorted(env_keys)}")
 
     # 6. Aptfile non-empty & valid package names
