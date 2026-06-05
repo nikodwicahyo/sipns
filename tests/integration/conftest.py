@@ -43,16 +43,20 @@ def mock_weasyprint(monkeypatch):
 
 @pytest.fixture(scope='function')
 def csrf_app():
-    """Flask app kedua dengan WTF_CSRF_ENABLED=True untuk security test."""
+    """Flask app kedua dengan WTF_CSRF_ENABLED=True untuk security test.
+
+    Menggunakan ``create_app('csrf_testing')`` yang me-load
+    ``app.config.CSRFFlaskFormConfig`` (subclass ``TestingConfig`` dengan
+    ``WTF_CSRF_ENABLED=True``). Sebelumnya fixture ini mendefinisikan
+    ``CSRFFlaskFormConfig`` secara inline namun tetap memanggil
+    ``create_app('testing')`` (yang memuat ``TestingConfig`` dengan
+    ``WTF_CSRF_ENABLED=False``) lalu menimpa config setelah inisialisasi,
+    namun ``csrf.init_app(app)`` sudah membaca flag pada saat init
+    sehingga override setelahnya tidak selalu efektif.
+    """
     from app import create_app, db as _db
-    from app.config import TestingConfig
 
-    class CSRFFlaskFormConfig(TestingConfig):
-        WTF_CSRF_ENABLED = True
-
-    flask_app = create_app('testing')
-    flask_app.config.from_object(CSRFFlaskFormConfig)
-    flask_app.config['WTF_CSRF_ENABLED'] = True
+    flask_app = create_app('csrf_testing')
     flask_app.config['SECRET_KEY'] = 'test-secret-for-csrf'
 
     with flask_app.app_context():

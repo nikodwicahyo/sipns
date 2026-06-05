@@ -217,15 +217,3 @@ class Nilai(db.Model):
             'status_lulus': self.status_lulus,
             'is_locked': self.is_locked,
         }
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'mata_pelajaran': self.mata_pelajaran,
-            'nilai_tugas': float(self.nilai_tugas),
-            'nilai_uts': float(self.nilai_uts),
-            'nilai_uas': float(self.nilai_uas),
-            'nilai_akhir': float(self.nilai_akhir) if self.nilai_akhir else None,
-            'status_lulus': self.status_lulus,
-            'is_locked': self.is_locked,
-        }

@@ -572,6 +572,7 @@ def health_check():
 
 @admin_bp.route('/api/siswa-by-kelas/<path:kelas>')
 @login_required
+@role_required('admin')
 def api_siswa_by_kelas(kelas):
     """API: Ambil list siswa (JSON) berdasarkan kelas — untuk AJAX populate dropdown.
 
@@ -593,6 +594,7 @@ def api_siswa_by_kelas(kelas):
 
 @admin_bp.route('/api/nilai-preview')
 @login_required
+@role_required('admin')
 def api_nilai_preview():
     """API: Preview kalkulasi nilai akhir real-time (AJAX).
 
@@ -628,6 +630,7 @@ def api_nilai_preview():
 
 @admin_bp.route('/api/statistik-kelas/<path:kelas>')
 @login_required
+@role_required('admin')
 def api_statistik_kelas(kelas):
     """API: Statistik agregat nilai per kelas (untuk Chart.js)."""
     data_nilai = Nilai.query.join(Siswa, Nilai.siswa_id == Siswa.id).filter(

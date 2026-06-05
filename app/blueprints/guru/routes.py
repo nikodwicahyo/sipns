@@ -240,3 +240,73 @@ def rekap_nilai():
                            data_nilai=data_nilai,
                            statistik=statistik,
                            kelas_list=kelas_list)
+
+
+# ===========================================================================
+# API ENDPOINTS (AJAX) — GURU
+# ===========================================================================
+#
+# Endpoint AJAX di blueprint ``admin`` di-harden dengan
+# ``@role_required('admin')`` (lihat ``app/blueprints/admin/routes.py``).
+# Untuk mempertahankan fungsionalitas input nilai oleh guru (dropdown
+# siswa berdasarkan kelas + preview kalkulasi), tersedia endpoint
+# paralel di blueprint ini yang diizinkan untuk role ``guru``.
+
+@guru_bp.route('/api/siswa-by-kelas/<path:kelas>')
+@login_required
+@role_required('guru')
+def api_siswa_by_kelas(kelas):
+    """API (guru): list siswa (JSON) berdasarkan kelas untuk AJAX dropdown.
+
+    Args:
+        kelas (str): Nama kelas (path param, support nama dengan spasi/slash).
+
+    Returns:
+        Response: JSON array berisi ``{id, nis, nama, kelas}`` untuk
+        setiap siswa aktif (tidak soft-deleted). Digunakan oleh
+        ``guru/nilai/input.html`` saat guru memilih kelas untuk
+        mem-populate dropdown siswa.
+    """
+    siswa_list = Siswa.query.filter(
+        Siswa.kelas == kelas, Siswa.deleted_at.is_(None)
+    ).order_by(Siswa.nama).all()
+    return jsonify([{
+        'id': s.id,
+        'nis': s.nis,
+        'nama': s.nama,
+        'kelas': s.kelas,
+    } for s in siswa_list])
+
+
+@guru_bp.route('/api/nilai-preview')
+@login_required
+@role_required('guru')
+def api_nilai_preview():
+    """API (guru): preview kalkulasi nilai akhir real-time (AJAX).
+
+    Query params: ``tugas``, ``uts``, ``uas`` (semua numeric 0-100).
+    Response JSON: ``{nilai_akhir, status_lulus, label, badge_class}``
+    atau error 422 jika input tidak valid.
+
+    Digunakan oleh ``guru/nilai/input.html`` setiap guru mengetik di
+    form input nilai, untuk update preview live sebelum submit.
+    """
+    try:
+        tugas = float(request.args.get('tugas', 0))
+        uts = float(request.args.get('uts', 0))
+        uas = float(request.args.get('uas', 0))
+
+        from app.services.nilai_service import hitung_nilai_akhir, tentukan_status_kelulusan
+        nilai_akhir = hitung_nilai_akhir(tugas, uts, uas)
+        status = tentukan_status_kelulusan(nilai_akhir)
+
+        return jsonify({
+            'nilai_akhir': nilai_akhir,
+            'status_lulus': status['lulus'],
+            'label': status['label'],
+            'badge_class': status['badge_class'],
+        })
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 422
+    except Exception:
+        return jsonify({'error': 'Terjadi kesalahan'}), 500

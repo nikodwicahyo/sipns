@@ -78,8 +78,19 @@ class TestingConfig(Config):
     SESSION_COOKIE_SECURE = False
 
 
+class CSRFFlaskFormConfig(TestingConfig):
+    """Konfigurasi turunan TestingConfig dengan CSRF protection AKTIF.
+
+    Digunakan oleh fixture ``csrf_app`` di ``tests/integration/conftest.py``
+    untuk menguji perilaku security (CSRF rejection) tanpa mematikan
+    proteksi CSRF seperti pada ``TestingConfig`` standar.
+    """
+    WTF_CSRF_ENABLED = True
+
+
 config_map = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
     'testing': TestingConfig,
+    'csrf_testing': CSRFFlaskFormConfig,
 }
