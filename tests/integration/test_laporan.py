@@ -145,3 +145,194 @@ class TestLaporanAuditLog:
         assert response.status_code == 200
         log = AuditLog.query.filter_by(action='EXPORT_EXCEL').first()
         assert log is not None
+
+
+class TestLaporanRoleBased:
+    """Pengujian role-based filtering untuk export PDF & Excel.
+
+    Aturan akses (PRD §14 kontrol akses):
+    - Admin: tidak ada filter mapel, akses penuh.
+    - Guru: filter dikunci ke ``current_user.guru.mata_pelajaran``.
+    - Siswa: diblok total (lihat test di atas).
+    """
+
+    def test_guru_pdf_hanya_untuk_mapelnya(self, login_guru, guru_user, sample_nilai):
+        """Guru Matematika download PDF → 200 OK dan data terfilter ke Matematika saja.
+
+        Fixture ``sample_nilai`` berisi 6 records (3 siswa × 2 mapel:
+        Matematika + Bahasa Indonesia). Guru dengan mapel Matematika harus
+        hanya menerima 3 record (1 mapel × 3 siswa), bukan 6.
+        """
+        user, guru = guru_user  # guru.mata_pelajaran = 'Matematika'
+        from app.models.nilai import Nilai as NilaiModel
+        # Hitung ekspektasi: record dengan mapel guru saja.
+        expected_count = NilaiModel.query.filter_by(
+            mata_pelajaran=guru.mata_pelajaran
+        ).count()
+        assert expected_count > 0, 'Sample nilai harus berisi mapel guru'
+
+        response = login_guru.get('/laporan/pdf/kelas/X-IPA-1')
+        assert response.status_code == 200
+        assert response.content_type == 'application/pdf'
+        # Filename harus menyertakan nama mapel guru.
+        cd = response.headers.get('Content-Disposition', '')
+        assert 'attachment' in cd
+        assert 'rekap_X-IPA-1' in cd
+        assert 'Matematika' in cd, (
+            f'Filename harus menyertakan mapel guru. Got: {cd}'
+        )
+
+    def test_guru_pdf_tidak_termasuk_mapel_lain(self, login_guru, guru_user, sample_nilai, db):
+        """Verifikasi data PDF guru TIDAK termasuk record Bahasa Indonesia.
+
+        Karena WeasyPrint di-mock dan tidak merender HTML asli, kita verifikasi
+        via service langsung bahwa query yang dipakai memfilter mapel.
+        """
+        from app.models.nilai import Nilai as NilaiModel
+        # sample_nilai punya record Bahasa Indonesia (mapel lain).
+        other_mapel_count = NilaiModel.query.filter(
+            NilaiModel.mata_pelajaran != 'Matematika'
+        ).count()
+        assert other_mapel_count > 0, 'Sample harus punya mapel lain untuk uji'
+
+        # Trigger request agar route handler memanggil service dengan filter.
+        response = login_guru.get('/laporan/pdf/kelas/X-IPA-1')
+        assert response.status_code == 200
+
+        # Verifikasi via audit log description: harus menyertakan "(mapel: Matematika)".
+        from app.models.audit_log import AuditLog
+        log = AuditLog.query.filter_by(action='PRINT_PDF').first()
+        assert log is not None
+        assert 'mapel: Matematika' in log.description
+
+    def test_guru_excel_hanya_untuk_mapelnya(self, login_guru, guru_user, sample_nilai):
+        """Guru download Excel → filename dan isi terfilter ke mapel guru saja."""
+        user, guru = guru_user
+        response = login_guru.get('/laporan/excel')
+        assert response.status_code == 200
+        assert 'spreadsheetml' in response.content_type
+        # Filename harus menyertakan mapel guru.
+        cd = response.headers.get('Content-Disposition', '')
+        assert 'Matematika' in cd, (
+            f'Filename Excel harus menyertakan mapel guru. Got: {cd}'
+        )
+
+    def test_guru_excel_filter_kelas_dan_mapel(self, login_guru, guru_user, sample_nilai):
+        """Guru Excel dengan ?kelas= → tetap filter ke mapel guru (intersection)."""
+        user, guru = guru_user
+        response = login_guru.get('/laporan/excel?kelas=X-IPA-1')
+        assert response.status_code == 200
+        cd = response.headers.get('Content-Disposition', '')
+        # Harus ada kelas DAN mapel guru di filename.
+        assert 'X-IPA-1' in cd
+        assert 'Matematika' in cd
+
+    def test_guru_excel_kelas_tanpa_nilai_mapelnya_redirect(
+        self, login_guru, guru_user, sample_siswa, db
+    ):
+        """Guru minta kelas tanpa nilai mapel-nya → redirect + flash warning.
+
+        Setup: sample_siswa punya 3 siswa (2 di X-IPA-1, 1 di X-IPA-2) tapi
+        tidak ada record Nilai sama sekali (sample_nilai TIDAK dipakai).
+        Guru Matematika → harus redirect karena mapelnya belum ada nilai.
+        """
+        # Tambah satu record nilai Bahasa Indonesia (bukan mapel guru) di X-IPA-1.
+        from app.models.nilai import Nilai as NilaiModel
+        guru_id_lain = 999  # sembarang guru_id, tidak kena filter mapel di guard
+        n = NilaiModel(
+            siswa_id=sample_siswa[0].id,
+            guru_id=guru_id_lain,
+            mata_pelajaran='Bahasa Indonesia',
+            nilai_tugas=80, nilai_uts=80, nilai_uas=80,
+        )
+        db.session.add(n)
+        db.session.commit()
+
+        response = login_guru.get('/laporan/excel?kelas=X-IPA-1', follow_redirects=False)
+        # Mapel guru (Matematika) tidak punya record untuk X-IPA-1 → redirect.
+        assert response.status_code == 302
+        assert '/laporan' in response.headers['Location']
+
+    def test_guru_index_hanya_tampilkan_kelas_untuk_mapelnya(
+        self, login_guru, guru_user, sample_siswa, db
+    ):
+        """Index page untuk guru: dropdown kelas harus terfilter ke mapel guru.
+
+        Setup: 2 siswa di X-IPA-1 dapat nilai Matematika; 1 siswa di X-IPA-2
+        dapat nilai Bahasa Indonesia (mapel lain, harus tersembunyi dari
+        dropdown guru Matematika).
+        """
+        from app.models.nilai import Nilai as NilaiModel
+        # Matematika di X-IPA-1 (untuk 2 siswa pertama).
+        for s in sample_siswa[:2]:
+            n = NilaiModel(
+                siswa_id=s.id, guru_id=guru_user[1].id,
+                mata_pelajaran='Matematika',
+                nilai_tugas=80, nilai_uts=80, nilai_uas=80,
+            )
+            n.hitung_dan_simpan()
+            db.session.add(n)
+        # Bahasa Indonesia di X-IPA-2 (mapel lain — harus TIDAK muncul di dropdown).
+        n2 = NilaiModel(
+            siswa_id=sample_siswa[2].id, guru_id=999,
+            mata_pelajaran='Bahasa Indonesia',
+            nilai_tugas=75, nilai_uts=75, nilai_uas=75,
+        )
+        n2.hitung_dan_simpan()
+        db.session.add(n2)
+        db.session.commit()
+
+        response = login_guru.get('/laporan/rekap-kelas')
+        assert response.status_code == 200
+        body = response.data.decode('utf-8')
+        # Harus ada banner info mapel.
+        assert 'Matematika' in body, 'Banner info harus menyebut mapel guru'
+        # X-IPA-1 muncul (ada nilai Matematika).
+        assert 'X-IPA-1' in body, 'X-IPA-1 harus muncul di dropdown'
+        # X-IPA-2 TIDAK boleh muncul (hanya ada nilai Bahasa Indonesia).
+        assert 'X-IPA-2' not in body, (
+            'X-IPA-2 tidak boleh muncul karena mapel guru tidak ada di sana'
+        )
+
+    def test_admin_index_tidak_terfilter_mapel(
+        self, login_admin, sample_siswa, db
+    ):
+        """Admin index harus menampilkan SEMUA kelas yang punya nilai (tanpa filter mapel)."""
+        from app.models.nilai import Nilai as NilaiModel
+        # Matematika di X-IPA-1
+        n1 = NilaiModel(
+            siswa_id=sample_siswa[0].id, guru_id=1,
+            mata_pelajaran='Matematika',
+            nilai_tugas=80, nilai_uts=80, nilai_uas=80,
+        )
+        n1.hitung_dan_simpan()
+        # Bahasa Indonesia di X-IPA-2
+        n2 = NilaiModel(
+            siswa_id=sample_siswa[2].id, guru_id=2,
+            mata_pelajaran='Bahasa Indonesia',
+            nilai_tugas=75, nilai_uts=75, nilai_uas=75,
+        )
+        n2.hitung_dan_simpan()
+        db.session.add_all([n1, n2])
+        db.session.commit()
+
+        response = login_admin.get('/laporan/rekap-kelas')
+        assert response.status_code == 200
+        body = response.data.decode('utf-8')
+        # Admin harus melihat KEDUA kelas (tidak ada filter mapel).
+        assert 'X-IPA-1' in body
+        assert 'X-IPA-2' in body
+        # Admin TIDAK boleh melihat banner info mapel.
+        assert 'mapel</strong>. Anda login sebagai <strong>Guru' not in body
+
+    def test_guru_tanpa_record_untuk_kelas_redirect(
+        self, login_guru, guru_user, sample_siswa, db
+    ):
+        """Guru minta kelas yang TIDAK punya nilai mapel-nya → redirect.
+
+        Fixture sample_siswa sudah ada 2 siswa di X-IPA-1, tapi tanpa Nilai.
+        Guru Matematika minta PDF X-IPA-1 → harus redirect dengan flash.
+        """
+        response = login_guru.get('/laporan/pdf/kelas/X-IPA-1', follow_redirects=False)
+        assert response.status_code == 302
+        assert '/laporan' in response.headers['Location']

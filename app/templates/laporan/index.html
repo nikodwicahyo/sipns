@@ -5,6 +5,28 @@
     <h3><i class="bi bi-file-earmark-pdf"></i> Laporan & Ekspor</h3>
 </div>
 
+{% if mapel_filter %}
+<div class="alert alert-info d-flex align-items-center" role="alert">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    <div>
+        Anda login sebagai <strong>Guru</strong>. Laporan & ekspor hanya menampilkan data nilai
+        untuk mata pelajaran <strong>{{ mapel_filter }}</strong> sesuai akun Anda.
+    </div>
+</div>
+{% endif %}
+
+{% if not kelas_list %}
+<div class="alert alert-warning" role="alert">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    {% if mapel_filter %}
+    Belum ada data nilai untuk mata pelajaran <strong>{{ mapel_filter }}</strong>.
+    Silakan input nilai terlebih dahulu melalui modul <em>Input Nilai</em>.
+    {% else %}
+    Belum ada data nilai yang dapat dicetak/diexpor. Silakan input nilai terlebih dahulu.
+    {% endif %}
+</div>
+{% endif %}
+
 <div class="row g-4">
     <div class="col-md-6">
         <div class="card">
@@ -13,7 +35,7 @@
                 <p class="text-muted">Generate laporan rekap nilai seluruh siswa dalam satu kelas.</p>
                 <div class="mb-3">
                     <label class="form-label">Pilih Kelas</label>
-                    <select class="form-select" id="kelasPdf">
+                    <select class="form-select" id="kelasPdf" {% if not kelas_list %}disabled{% endif %}>
                         <option value="">-- Pilih Kelas --</option>
                         {% for k in kelas_list %}
                         <option value="{{ k }}">{{ k }}</option>
@@ -34,14 +56,14 @@
                 <p class="text-muted">Download data nilai dalam format Excel (.xlsx).</p>
                 <div class="mb-3">
                     <label class="form-label">Filter Kelas (Opsional)</label>
-                    <select class="form-select" id="kelasExcel">
+                    <select class="form-select" id="kelasExcel" {% if not kelas_list %}disabled{% endif %}>
                         <option value="">-- Semua Kelas --</option>
                         {% for k in kelas_list %}
                         <option value="{{ k }}">{{ k }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <button class="btn btn-success" onclick="eksporExcel()">
+                <button class="btn btn-success" onclick="eksporExcel()" {% if not kelas_list %}disabled{% endif %}>
                     <i class="bi bi-file-earmark-excel"></i> Download Excel
                 </button>
             </div>

@@ -52,7 +52,7 @@ def _get_base_url():
     return None
 
 
-def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html'):
+def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html', mata_pelajaran=None):
     """Generate PDF laporan rekap nilai seluruh siswa dalam satu kelas.
 
     Args:
@@ -61,6 +61,13 @@ def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html'):
         template (str, optional): Path template Jinja2 untuk body PDF.
             Default ``'laporan/rekap_kelas.html'``. Bisa di-override untuk
             template alternatif (mis. template bulanan).
+        mata_pelajaran (str, optional): Filter berdasarkan mata pelajaran.
+            Jika diisi, hanya record ``Nilai`` dengan ``mata_pelajaran``
+            yang persis cocok yang akan disertakan. Default ``None``
+            (tidak ada filter mapel — semua mapel untuk kelas tersebut).
+            Untuk akses guru, route handler akan memaksa parameter ini
+            sesuai ``current_user.guru.mata_pelajaran`` agar scope data
+            sesuai akun login.
 
     Returns:
         bytes: Konten file PDF siap-download. Caller (``laporan/routes.py``)
@@ -78,25 +85,28 @@ def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html'):
     from app.models.siswa import Siswa
     try:
         # Query nilai + siswa dalam satu JOIN, filter deleted siswa.
-        data_nilai = (
+        query = (
             Nilai.query
             .join(Siswa, Nilai.siswa_id == Siswa.id)
             .filter(Siswa.kelas == kelas, Siswa.deleted_at.is_(None))
-            .order_by(Siswa.nama)
-            .all()
         )
+        # Filter mata pelajaran jika diisi (akses guru → mapel guru saja).
+        if mata_pelajaran:
+            query = query.filter(Nilai.mata_pelajaran == mata_pelajaran)
+        data_nilai = query.order_by(Siswa.nama).all()
 
         # Statistik agregat (rata-rata, tertinggi, dll) untuk footer PDF.
         statistik = hitung_statistik_kelas(data_nilai)
 
         # Render template Jinja2 → HTML string. Variabel ``data``,
-        # ``statistik``, ``kelas``, ``current_year``, ``tanggal_cetak``
-        # tersedia di template.
+        # ``statistik``, ``kelas``, ``mata_pelajaran``, ``current_year``,
+        # ``tanggal_cetak`` tersedia di template.
         html_content = render_template(
             template,
             data=data_nilai,
             statistik=statistik,
             kelas=kelas,
+            mata_pelajaran=mata_pelajaran,
             current_year=current_year_jakarta(),
             tanggal_cetak=now_jakarta().strftime('%d/%m/%Y %H:%M'),
         )
@@ -158,12 +168,12 @@ def generate_transkrip_pdf(siswa_id):
         raise RuntimeError(f"Gagal generate PDF transkrip: {e}") from e
 
 
-def export_excel(kelas=None, dicetak_oleh=None):
+def export_excel(kelas=None, dicetak_oleh=None, mata_pelajaran=None):
     """Ekspor data nilai ke file ``.xlsx`` (Microsoft Excel format).
 
     Format workbook:
     - Row 1: Judul laporan (merged, bold, font besar).
-    - Row 2: Info kelas, tanggal, pencetak (merged).
+    - Row 2: Info kelas, mata pelajaran, tanggal, pencetak (merged).
     - Row 3: Baris kosong (spacing).
     - Row 4: Header kolom (bold, fill biru, teks putih).
     - Row 5+: Data nilai (alternating row color abu-abu/putih).
@@ -174,6 +184,10 @@ def export_excel(kelas=None, dicetak_oleh=None):
             kelas yang ada di database.
         dicetak_oleh (str, optional): Nama user yang mencetak (untuk info
             di header). Default ``None`` (tidak ditampilkan).
+        mata_pelajaran (str, optional): Filter mata pelajaran. Jika diisi,
+            hanya record dengan ``mata_pelajaran`` cocok yang diekspor.
+            Untuk akses guru, route handler memaksa parameter ini
+            sesuai akun login.
 
     Returns:
         bytes: Konten file ``.xlsx`` siap-download. Disimpan ke
@@ -196,18 +210,15 @@ def export_excel(kelas=None, dicetak_oleh=None):
     ws.title = "Rekap Nilai"
 
     # === 2. Query data ===
+    query = (
+        Nilai.query
+        .join(Siswa, Nilai.siswa_id == Siswa.id)
+        .filter(Siswa.deleted_at.is_(None))
+    )
     if kelas:
-        query = (
-            Nilai.query
-            .join(Siswa, Nilai.siswa_id == Siswa.id)
-            .filter(Siswa.kelas == kelas, Siswa.deleted_at.is_(None))
-        )
-    else:
-        query = (
-            Nilai.query
-            .join(Siswa, Nilai.siswa_id == Siswa.id)
-            .filter(Siswa.deleted_at.is_(None))
-        )
+        query = query.filter(Siswa.kelas == kelas)
+    if mata_pelajaran:
+        query = query.filter(Nilai.mata_pelajaran == mata_pelajaran)
     data_nilai = query.order_by(Siswa.kelas, Siswa.nama).all()
 
     # === 3. Style constants (dideklarasikan di tengah untuk keterbacaan) ===
@@ -231,13 +242,19 @@ def export_excel(kelas=None, dicetak_oleh=None):
 
     # === 5. Row 1: Title (merged across all columns) ===
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_cols)
-    title_cell = ws.cell(row=1, column=1, value="LAPORAN REKAP NILAI SISWA")
+    title_text = "LAPORAN REKAP NILAI SISWA"
+    if mata_pelajaran:
+        title_text += f" - MATA PELAJARAN {mata_pelajaran.upper()}"
+    title_cell = ws.cell(row=1, column=1, value=title_text)
     title_cell.font = title_font
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
 
-    # === 6. Row 2: Info (kelas, tanggal, pencetak) ===
+    # === 6. Row 2: Info (kelas, mapel, tanggal, pencetak) ===
     label_kelas = kelas if kelas else "Semua Kelas"
-    info_text = f"Kelas: {label_kelas} | Tanggal: {now_jakarta().strftime('%d/%m/%Y %H:%M')}"
+    info_text = f"Kelas: {label_kelas}"
+    if mata_pelajaran:
+        info_text += f" | Mata Pelajaran: {mata_pelajaran}"
+    info_text += f" | Tanggal: {now_jakarta().strftime('%d/%m/%Y %H:%M')}"
     if dicetak_oleh:
         info_text += f" | Dicetak oleh: {dicetak_oleh}"
     ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=total_cols)

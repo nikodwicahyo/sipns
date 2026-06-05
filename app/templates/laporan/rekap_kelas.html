@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Rekap Nilai - {{ kelas }}</title>
+    <title>Laporan Rekap Nilai - {{ kelas }}{% if mata_pelajaran %} - {{ mata_pelajaran }}{% endif %}</title>
     <style>
         @page {
             size: A4;
@@ -79,7 +79,13 @@
     <div class="header">
         <h2>LAPORAN REKAP NILAI SISWA</h2>
         <p>SIPNS - Sistem Informasi Pengolahan Nilai Siswa</p>
-        <p><strong>Kelas:</strong> {{ kelas }} | <strong>Tanggal Cetak:</strong> {{ tanggal_cetak }}</p>
+        <p>
+            <strong>Kelas:</strong> {{ kelas }}
+            {% if mata_pelajaran %}
+            | <strong>Mata Pelajaran:</strong> {{ mata_pelajaran }}
+            {% endif %}
+            | <strong>Tanggal Cetak:</strong> {{ tanggal_cetak }}
+        </p>
     </div>
 
     <table>
@@ -88,6 +94,7 @@
                 <th>No</th>
                 <th>NIS</th>
                 <th>Nama</th>
+                <th>Mata Pelajaran</th>
                 <th>Tugas</th>
                 <th>UTS</th>
                 <th>UAS</th>
@@ -101,6 +108,7 @@
                 <td>{{ loop.index }}</td>
                 <td>{{ n.siswa.nis if n.siswa else '-' }}</td>
                 <td style="text-align:left;">{{ n.siswa.nama if n.siswa else '-' }}</td>
+                <td style="text-align:left;">{{ n.mata_pelajaran }}</td>
                 <td>{{ n.nilai_tugas }}</td>
                 <td>{{ n.nilai_uts }}</td>
                 <td>{{ n.nilai_uas }}</td>
