@@ -27,13 +27,13 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'admin.health_check' %}active{% endif %}" href="{{ url_for('admin.health_check') }}">
-                <i class="bi bi-heart-pulse"></i> Health Check
+            <a class="nav-link {% if request.endpoint and 'laporan' in request.endpoint %}active{% endif %}" href="{{ url_for('laporan.index') }}">
+                <i class="bi bi-file-earmark-pdf"></i> Laporan
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {% if request.endpoint and 'laporan' in request.endpoint %}active{% endif %}" href="{{ url_for('laporan.index') }}">
-                <i class="bi bi-file-earmark-pdf"></i> Laporan
+            <a class="nav-link {% if request.endpoint == 'admin.health_check' %}active{% endif %}" href="{{ url_for('admin.health_check') }}">
+                <i class="bi bi-heart-pulse"></i> Health Check
             </a>
         </li>
         {% elif current_user.is_guru() %}

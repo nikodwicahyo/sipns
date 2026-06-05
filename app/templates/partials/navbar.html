@@ -1,7 +1,8 @@
+{% if current_user.is_authenticated %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">
-            <i class="bi bi-book"></i> SIPNS
+            <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="SIPNS" height="32" class="me-1">
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -87,3 +88,4 @@
         </div>
     </div>
 </nav>
+{% endif %}

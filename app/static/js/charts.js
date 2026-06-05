@@ -19,6 +19,8 @@ function renderBarChart(canvasId, labels, data) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            devicePixelRatio: window.devicePixelRatio || 1,
             scales: {
                 y: { beginAtZero: true, max: 100 },
             },
@@ -42,6 +44,8 @@ function renderDoughnutChart(canvasId, lulus, tidakLulus) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            devicePixelRatio: window.devicePixelRatio || 1,
             plugins: {
                 legend: { position: 'bottom' },
             },

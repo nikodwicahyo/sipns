@@ -1,3 +1,23 @@
+"""
+Modul: blueprints/guru/routes.py
+Deskripsi: Route handler untuk modul Guru (input & kelola nilai).
+
+Endpoint:
+- ``GET     /guru/dashboard``       → Dashboard guru.
+- ``GET/POST /guru/nilai/input``    → Form input nilai baru.
+- ``GET/POST /guru/nilai/edit/<id>``→ Form edit nilai (jika belum dikunci).
+- ``POST    /guru/nilai/kunci/<id>``→ Kunci nilai (set is_locked=True).
+- ``GET     /guru/nilai/rekap``     → Rekap nilai kelas yang diampu.
+
+Aturan bisnis:
+- Guru hanya bisa input/edit nilai untuk mata pelajaran yang DIAMPU
+  (lihat ``Guru.mata_pelajaran``).
+- Nilai yang sudah ``is_locked=True`` tidak bisa diubah (kecuali admin).
+
+Author : Niko Dwicahyo
+Versi  : 1.0.0
+"""
+import logging
 from flask import render_template, redirect, url_for, flash, request, jsonify, abort
 from flask_login import login_required, current_user
 from app.blueprints.guru import guru_bp
@@ -9,20 +29,34 @@ from app.services.audit_service import catat_audit_log
 from app.services.nilai_service import hitung_statistik_kelas
 from sqlalchemy import func
 
+logger = logging.getLogger(__name__)
+
+
+# ===========================================================================
+# DASHBOARD GURU
+# ===========================================================================
 
 @guru_bp.route('/dashboard')
 @login_required
 @role_required('guru')
 def dashboard():
+    """Halaman dashboard guru: info mapel, total siswa, kelas yang diampu.
+
+    Menghitung:
+    - Total siswa unik yang pernah dinilai guru ini.
+    - Daftar kelas (distinct) yang pernah dinilai guru ini.
+    """
     guru = Guru.query.get(current_user.guru_id)
     if not guru:
         flash('Data guru tidak ditemukan.', 'error')
         return redirect(url_for('auth.login'))
 
+    # Count distinct siswa_id dari tabel nilai where guru_id = guru.id.
     total_siswa = db.session.query(func.count(func.distinct(Nilai.siswa_id))).filter(
         Nilai.guru_id == guru.id
     ).scalar() or 0
 
+    # Ambil daftar kelas (distinct) yang pernah dinilai guru ini.
     kelas_tercatat = db.session.query(Siswa.kelas).join(Nilai, Nilai.siswa_id == Siswa.id).filter(
         Nilai.guru_id == guru.id, Siswa.deleted_at.is_(None)
     ).distinct().all()
@@ -35,10 +69,26 @@ def dashboard():
                            mata_pelajaran=guru.mata_pelajaran)
 
 
+# ===========================================================================
+# INPUT & KELOLA NILAI
+# ===========================================================================
+
 @guru_bp.route('/nilai/input', methods=['GET', 'POST'])
 @login_required
 @role_required('guru')
 def input_nilai():
+    """Halaman & handler form input nilai baru (atau update nilai existing).
+
+    Flow:
+    1. Ambil data guru yang sedang login (untuk ``mata_pelajaran``).
+    2. GET: populate dropdown siswa (semua siswa aktif).
+    3. POST: cek apakah nilai untuk (siswa_id, mapel) sudah ada.
+       - Ada & locked → flash error (tidak bisa diubah).
+       - Ada & not locked → UPDATE nilai existing.
+       - Tidak ada → INSERT nilai baru.
+    4. Panggil ``nilai.hitung_dan_simpan()`` (integrasi OOP ↔ terstruktur).
+    5. Commit, audit log, flash, redirect.
+    """
     guru = Guru.query.get(current_user.guru_id)
     if not guru:
         flash('Data guru tidak ditemukan.', 'error')
@@ -47,9 +97,11 @@ def input_nilai():
     form = NilaiForm()
     kelas_list = Siswa.daftar_kelas()
     siswa_list = Siswa.query.filter(Siswa.deleted_at.is_(None)).all()
+    # Choices untuk SelectField siswa: format "NIS - Nama (Kelas)".
     form.siswa_id.choices = [(s.id, f'{s.nis} - {s.nama} ({s.kelas})') for s in siswa_list]
 
     if form.validate_on_submit():
+        # Cek apakah nilai untuk (siswa, mapel) sudah ada.
         existing = Nilai.query.filter_by(
             siswa_id=form.siswa_id.data,
             mata_pelajaran=guru.mata_pelajaran,
@@ -60,11 +112,14 @@ def input_nilai():
             return redirect(url_for('guru.input_nilai'))
 
         if existing:
+            # Update nilai existing (tidak insert baru).
             nilai = existing
             nilai.nilai_tugas = form.nilai_tugas.data
             nilai.nilai_uts = form.nilai_uts.data
             nilai.nilai_uas = form.nilai_uas.data
+            action = 'UPDATE'
         else:
+            # Insert nilai baru.
             nilai = Nilai(
                 siswa_id=form.siswa_id.data,
                 guru_id=guru.id,
@@ -73,14 +128,16 @@ def input_nilai():
                 nilai_uts=form.nilai_uts.data,
                 nilai_uas=form.nilai_uas.data,
             )
+            action = 'INSERT'
 
+        # Hitung nilai_akhir & status_lulus via service terstruktur.
         nilai.hitung_dan_simpan()
         db.session.add(nilai)
         db.session.commit()
 
         catat_audit_log(
             user_id=current_user.id,
-            action='INSERT' if not existing else 'UPDATE',
+            action=action,
             table_name='nilai',
             record_id=nilai.id,
             description=f'Nilai {guru.mata_pelajaran} untuk siswa ID {nilai.siswa_id}',
@@ -97,6 +154,11 @@ def input_nilai():
 @login_required
 @role_required('guru')
 def edit_nilai(id):
+    """Halaman & handler form edit nilai.
+
+    Guard: tolak edit jika ``is_locked=True``. Hanya field nilai
+    (tugas/uts/uas) yang diedit — siswa_id & mata_pelajaran immutable.
+    """
     nilai = Nilai.query.get_or_404(id)
     if nilai.is_locked:
         flash('Nilai sudah terkunci dan tidak dapat diubah.', 'error')
@@ -112,7 +174,7 @@ def edit_nilai(id):
         nilai.nilai_tugas = form.nilai_tugas.data
         nilai.nilai_uts = form.nilai_uts.data
         nilai.nilai_uas = form.nilai_uas.data
-        nilai.hitung_dan_simpan()
+        nilai.hitung_dan_simpan()  # recalculate nilai_akhir.
         db.session.commit()
 
         flash('Nilai berhasil diperbarui.', 'success')
@@ -125,8 +187,13 @@ def edit_nilai(id):
 @login_required
 @role_required('guru')
 def kunci_nilai(id):
+    """Kunci nilai (``is_locked = True``).
+
+    Setelah dikunci, nilai tidak bisa diubah oleh guru (lihat ``edit_nilai``).
+    Hanya admin yang bisa unlock (lihat backlog BL-007).
+    """
     nilai = Nilai.query.get_or_404(id)
-    nilai.lock()
+    nilai.lock()  # idempotent: no-op jika sudah locked.
     db.session.commit()
 
     catat_audit_log(
@@ -146,13 +213,26 @@ def kunci_nilai(id):
 @login_required
 @role_required('guru')
 def rekap_nilai():
+    """Halaman rekap nilai kelas yang diampu guru.
+
+    Menampilkan tabel nilai semua siswa yang pernah dinilai guru ini
+    (diurutkan by kelas, nama), dengan badge status lulus & tombol
+    kunci nilai per baris.
+    """
     guru = Guru.query.get(current_user.guru_id)
     kelas_list = Siswa.daftar_kelas()
 
-    data_nilai = Nilai.query.filter_by(guru_id=guru.id).join(Siswa, Nilai.siswa_id == Siswa.id).filter(
-        Siswa.deleted_at.is_(None)
-    ).order_by(Siswa.kelas, Siswa.nama).all()
+    # Query nilai guru ini, JOIN siswa (exclude soft-deleted).
+    data_nilai = (
+        Nilai.query
+        .filter_by(guru_id=guru.id)
+        .join(Siswa, Nilai.siswa_id == Siswa.id)
+        .filter(Siswa.deleted_at.is_(None))
+        .order_by(Siswa.kelas, Siswa.nama)
+        .all()
+    )
 
+    # Statistik agregat untuk header halaman.
     statistik = hitung_statistik_kelas(data_nilai)
 
     return render_template('guru/nilai/rekap.html',

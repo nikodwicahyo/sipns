@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIPNS - Sistem Informasi Pengolahan Nilai Siswa</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+</head>
+<body class="landing-page">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="SIPNS" height="32" class="me-2 align-middle">
+                SIPNS
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#landingNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="landingNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="#fitur">Fitur</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#cara-kerja">Cara Kerja</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#peran">Peran Pengguna</a></li>
+                </ul>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-sm px-3">
+                    <i class="bi bi-box-arrow-in-right"></i> Masuk
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section text-white">
+        <div class="container">
+            <div class="row align-items-center justify-content-center py-5">
+                <div class="col-lg-7 hero-text">
+                    <span class="badge bg-light text-primary mb-3 px-3 py-2 fw-semibold">
+                        <i class="bi bi-mortarboard-fill"></i> Pendidikan Digital
+                    </span>
+                    <h1 class="display-4 fw-bold mb-3">
+                        Sistem Informasi<br>Pengolahan Nilai Siswa
+                    </h1>
+                    <p class="lead mb-4 opacity-90">
+                        Platform digital terintegrasi untuk mengelola data nilai siswa secara
+                        <strong>efisien, akurat, dan transparan</strong>. Mendukung peran Admin, Guru, dan Siswa
+                        dalam satu ekosistem yang terpusat.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg fw-semibold">
+                            <i class="bi bi-box-arrow-in-right"></i> Masuk ke Aplikasi
+                        </a>
+                        <a href="#fitur" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-info-circle"></i> Pelajari Fitur
+                        </a>
+                    </div>
+                    <div class="mt-4 d-flex flex-wrap gap-4 hero-meta">
+                        <div><i class="bi bi-shield-check"></i> Aman &amp; Terenkripsi</div>
+                        <div><i class="bi bi-phone"></i> Responsif</div>
+                        <div><i class="bi bi-lightning-charge"></i> Perhitungan Otomatis</div>
+                    </div>
+                </div>
+                <div class="col-lg-5 d-none d-lg-block text-center hero-illustration">
+                    <div class="hero-logo-wrap mx-auto">
+                        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="SIPNS Logo" class="hero-logo">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="fitur" class="py-5 bg-white">
+        <div class="container py-3">
+            <div class="text-center mb-5">
+                <span class="text-primary fw-semibold text-uppercase small">Fitur Unggulan</span>
+                <h2 class="fw-bold mt-2">Kemudahan Mengelola Nilai Siswa</h2>
+                <p class="text-muted col-lg-7 mx-auto">
+                    SIPNS menyediakan fitur lengkap untuk institusi pendidikan dalam
+                    memproses, menghitung, dan melaporkan nilai siswa secara digital.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 text-center feature-card">
+                        <div class="card-body p-4">
+                            <div class="feature-icon bg-primary-subtle text-primary mx-auto">
+                                <i class="bi bi-clipboard-data"></i>
+                            </div>
+                            <h5 class="fw-bold mt-3">Input Nilai Terpusat</h5>
+                            <p class="text-muted mb-0 small">
+                                Kelola nilai Tugas, UTS, dan UAS dalam satu platform yang terstruktur.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 text-center feature-card">
+                        <div class="card-body p-4">
+                            <div class="feature-icon bg-success-subtle text-success mx-auto">
+                                <i class="bi bi-calculator"></i>
+                            </div>
+                            <h5 class="fw-bold mt-3">Kalkulasi Otomatis</h5>
+                            <p class="text-muted mb-0 small">
+                                Nilai akhir dihitung otomatis dengan bobot 30% Tugas + 30% UTS + 40% UAS.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 text-center feature-card">
+                        <div class="card-body p-4">
+                            <div class="feature-icon bg-warning-subtle text-warning mx-auto">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                            </div>
+                            <h5 class="fw-bold mt-3">Laporan PDF &amp; Excel</h5>
+                            <p class="text-muted mb-0 small">
+                                Cetak rekap kelas dan transkrip siswa dalam PDF atau ekspor ke Excel.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <div class="card h-100 text-center feature-card">
+                        <div class="card-body p-4">
+                            <div class="feature-icon bg-info-subtle text-info mx-auto">
+                                <i class="bi bi-bar-chart-line"></i>
+                            </div>
+                            <h5 class="fw-bold mt-3">Dashboard Interaktif</h5>
+                            <p class="text-muted mb-0 small">
+                                Visualisasi data nilai dan statistik kelulusan berbasis Chart.js.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="cara-kerja" class="py-5 bg-light">
+        <div class="container py-3">
+            <div class="text-center mb-5">
+                <span class="text-primary fw-semibold text-uppercase small">Cara Kerja</span>
+                <h2 class="fw-bold mt-2">Tiga Langkah Mudah</h2>
+                <p class="text-muted col-lg-7 mx-auto">
+                    Alur sederhana untuk mulai mengelola nilai siswa di institusi Anda.
+                </p>
+            </div>
+
+            <div class="row g-4 align-items-stretch">
+                <div class="col-md-4">
+                    <div class="card h-100 step-card">
+                        <div class="card-body p-4 position-relative">
+                            <div class="step-number">1</div>
+                            <div class="step-icon text-primary">
+                                <i class="bi bi-person-plus-fill"></i>
+                            </div>
+                            <h5 class="fw-bold">Daftarkan Pengguna</h5>
+                            <p class="text-muted mb-0 small">
+                                Admin mendaftarkan akun siswa, guru, dan pengguna lainnya
+                                beserta data diri lengkapnya.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100 step-card">
+                        <div class="card-body p-4 position-relative">
+                            <div class="step-number">2</div>
+                            <div class="step-icon text-primary">
+                                <i class="bi bi-pencil-square"></i>
+                            </div>
+                            <h5 class="fw-bold">Input Nilai</h5>
+                            <p class="text-muted mb-0 small">
+                                Guru menginput nilai Tugas, UTS, dan UAS sesuai mata pelajaran
+                                yang diampu. Sistem menghitung nilai akhir secara otomatis.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100 step-card">
+                        <div class="card-body p-4 position-relative">
+                            <div class="step-number">3</div>
+                            <div class="step-icon text-primary">
+                                <i class="bi bi-trophy-fill"></i>
+                            </div>
+                            <h5 class="fw-bold">Lihat Hasil &amp; Laporan</h5>
+                            <p class="text-muted mb-0 small">
+                                Siswa melihat nilai pribadi dan status kelulusan.
+                                Admin &amp; guru dapat mencetak laporan PDF atau ekspor Excel.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="peran" class="py-5 bg-white">
+        <div class="container py-3">
+            <div class="text-center mb-5">
+                <span class="text-primary fw-semibold text-uppercase small">Peran Pengguna</span>
+                <h2 class="fw-bold mt-2">Akses Disesuaikan untuk Setiap Peran</h2>
+                <p class="text-muted col-lg-7 mx-auto">
+                    SIPNS menerapkan kontrol akses berbasis peran (Role-Based Access Control)
+                    untuk menjaga keamanan dan keteraturan data.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100 role-card border-top border-primary border-4">
+                        <div class="card-body p-4 text-center">
+                            <div class="role-icon bg-primary text-white mx-auto">
+                                <i class="bi bi-shield-lock-fill"></i>
+                            </div>
+                            <h5 class="fw-bold mt-3">Admin</h5>
+                            <p class="text-muted small mb-3">
+                                Mengelola data siswa, guru, dan pengguna. Mengakses laporan,
+                                statistik, dan audit log aktivitas sistem.
+                            </p>
+                            <ul class="list-unstyled small text-start text-muted role-list">
+                                <li><i class="bi bi-check-circle-fill text-primary"></i> CRUD data siswa &amp; guru</li>
+                                <li><i class="bi bi-check-circle-fill text-primary"></i> Manajemen pengguna</li>
+                                <li><i class="bi bi-check-circle-fill text-primary"></i> Laporan &amp; statistik</li>
+                                <li><i class="bi bi-check-circle-fill text-primary"></i> Audit log aktivitas</li>
+                            </ul>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100 mt-2">
+                                <i class="bi bi-box-arrow-in-right"></i> Login sebagai Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100 role-card border-top border-success border-4">
+                        <div class="card-body p-4 text-center">
+                            <div class="role-icon bg-success text-white mx-auto">
+                                <i class="bi bi-person-badge-fill"></i>
+                            </div>
+                            <h5 class="fw-bold mt-3">Guru</h5>
+                            <p class="text-muted small mb-3">
+                                Menginput dan mengelola nilai siswa per mata pelajaran,
+                                mengunci nilai, serta mencetak rekap nilai kelas.
+                            </p>
+                            <ul class="list-unstyled small text-start text-muted role-list">
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Input &amp; edit nilai</li>
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Kunci nilai (lock)</li>
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Rekap nilai kelas</li>
+                                <li><i class="bi bi-check-circle-fill text-success"></i> Cetak laporan kelas</li>
+                            </ul>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-success w-100 mt-2">
+                                <i class="bi bi-box-arrow-in-right"></i> Login sebagai Guru
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card h-100 role-card border-top border-info border-4">
+                        <div class="card-body p-4 text-center">
+                            <div class="role-icon bg-info text-white mx-auto">
+                                <i class="bi bi-mortarboard-fill"></i>
+                            </div>
+                            <h5 class="fw-bold mt-3">Siswa</h5>
+                            <p class="text-muted small mb-3">
+                                Melihat nilai pribadi per mata pelajaran, rincian perhitungan,
+                                dan status kelulusan. Dapat mengunduh transkrip nilai.
+                            </p>
+                            <ul class="list-unstyled small text-start text-muted role-list">
+                                <li><i class="bi bi-check-circle-fill text-info"></i> Lihat nilai pribadi</li>
+                                <li><i class="bi bi-check-circle-fill text-info"></i> Rincian perhitungan</li>
+                                <li><i class="bi bi-check-circle-fill text-info"></i> Status kelulusan</li>
+                                <li><i class="bi bi-check-circle-fill text-info"></i> Cetak transkrip nilai</li>
+                            </ul>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-info w-100 mt-2">
+                                <i class="bi bi-box-arrow-in-right"></i> Login sebagai Siswa
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-5 bg-primary text-white text-center cta-section">
+        <div class="container py-3">
+            <h2 class="fw-bold mb-3">Siap Mengelola Nilai Siswa Lebih Mudah?</h2>
+            <p class="lead opacity-90 mb-4 col-lg-8 mx-auto">
+                Masuk ke SIPNS sekarang dan rasakan kemudahan pengolahan nilai
+                yang terstruktur, otomatis, dan transparan.
+            </p>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-light btn-lg fw-semibold px-4">
+                <i class="bi bi-box-arrow-in-right"></i> Masuk Sekarang
+            </a>
+        </div>
+    </section>
+
+    <footer class="bg-dark text-white-50 py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-2 mb-md-0">
+                    <small>
+                        &copy; {{ current_year }} {{ app_name }} &mdash; Sistem Informasi Pengolahan Nilai Siswa.
+                    </small>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <small>
+                        Created By Niko Dwicahyo Widiyanto
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const targetId = this.getAttribute('href');
+                if (targetId.length > 1) {
+                    const target = document.querySelector(targetId);
+                    if (target) {
+                        e.preventDefault();
+                        const navbarHeight = document.querySelector('.navbar').offsetHeight;
+                        const top = target.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
+                        window.scrollTo({ top: top, behavior: 'smooth' });
+                        const navCollapse = document.querySelector('.navbar-collapse');
+                        if (navCollapse.classList.contains('show')) {
+                            new bootstrap.Collapse(navCollapse).hide();
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

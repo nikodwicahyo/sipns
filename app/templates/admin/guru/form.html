@@ -26,6 +26,21 @@
                         {{ form.mata_pelajaran(class='form-control' + (' is-invalid' if form.mata_pelajaran.errors else '')) }}
                         {% for error in form.mata_pelajaran.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
                     </div>
+                    {% if not guru %}
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <div class="input-group">
+                            {{ form.password(class='form-control' + (' is-invalid' if form.password.errors else ''), placeholder='Kosongkan untuk menggunakan password default') }}
+                            <button class="btn btn-outline-secondary" type="button" id="togglePasswordGuru">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            {% for error in form.password.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="form-text">
+                            <i class="bi bi-info-circle"></i> Biarkan kosong untuk menggunakan password default: <code>Guru@123</code>
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="d-flex gap-2">
                         {{ form.submit(class='btn btn-primary') }}
                         <a href="{{ url_for('admin.daftar_guru') }}" class="btn btn-secondary">Batal</a>
@@ -35,4 +50,22 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('togglePasswordGuru')?.addEventListener('click', function() {
+    const input = document.getElementById('{{ form.password.id }}');
+    const icon = this.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+});
+</script>
 {% endblock %}

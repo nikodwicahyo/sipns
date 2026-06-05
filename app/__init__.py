@@ -56,7 +56,7 @@ def create_app(config_name=None):
 
     @app.route('/')
     def index():
-        from flask import redirect, url_for
+        from flask import redirect, url_for, render_template
         from flask_login import current_user
         if current_user.is_authenticated:
             if current_user.is_admin():
@@ -65,7 +65,7 @@ def create_app(config_name=None):
                 return redirect(url_for('guru.dashboard'))
             elif current_user.is_siswa():
                 return redirect(url_for('siswa.dashboard'))
-        return redirect(url_for('auth.login'))
+        return render_template('landing.html')
 
     from app.utils.time import format_jakarta, current_year_jakarta
 

@@ -224,7 +224,7 @@ Pengelolaan nilai siswa di banyak institusi pendidikan masih dilakukan secara ma
 | **Migration** | Flask-Migrate | 4.x | Database schema versioning (Alembic) |
 | **Authentication** | Flask-Login | 0.6.x | Session management & login |
 | **Form Validation** | Flask-WTF | 1.x | WTForms + CSRF protection |
-| **Database** | SQLite | 3.x | RDBMS embedded (development) |
+| **Database** | MySQL | 8.x | RDBMS production-ready |
 | **Frontend** | HTML5 | — | Markup |
 | **Styling** | Bootstrap | 5.3 | CSS framework responsif |
 | **Template** | Jinja2 | 3.x | Server-side rendering |
@@ -311,7 +311,7 @@ sipns/
 
 ```
 ┌──────────────┐       ┌──────────────────┐       ┌──────────────┐
-│    users     │       │      nilai        │       │    siswa     │
+│    users     │       │      nilai       │       │    siswa     │
 ├──────────────┤       ├──────────────────┤       ├──────────────┤
 │ id (PK)      │       │ id (PK)          │       │ id (PK)      │
 │ username     │       │ siswa_id (FK)    │◄──────│ nis (UNIQUE) │
@@ -1104,7 +1104,7 @@ TC-06: NA = (0.30 × 50) + (0.30 × 60) + (0.40 × 65)
 | 6 | Sistem tidak memiliki fitur reset password mandiri; harus melalui admin |
 | 7 | Rentang nilai valid: 0 sampai 100 (desimal diperbolehkan) |
 | 8 | KKM bersifat tetap (70) dan tidak dapat dikonfigurasi per mata pelajaran |
-| 9 | Sistem hanya mendukung satu database SQLite; tidak ada multi-tenant |
+| 9 | Sistem menggunakan MySQL sebagai database utama; memerlukan MySQL server terinstall |
 | 10 | Tidak ada notifikasi email/SMS |
 
 ---
@@ -1115,7 +1115,7 @@ TC-06: NA = (0.30 × 50) + (0.30 × 60) + (0.40 × 65)
 |--------|-------------|--------|----------|
 | Konflik versi library Python | Sedang | Tinggi | Gunakan `requirements.txt` dengan versi terkunci; virtual environment |
 | WeasyPrint kesulitan rendering font | Sedang | Sedang | Gunakan font web-safe; test PDF di awal development |
-| SQLite tidak kompatibel di environment tertentu | Rendah | Rendah | Gunakan SQLite bawaan Python; tidak perlu setup tambahan |
+| MySQL connection timeout | Rendah | Sedang | Gunakan connection pooling; set pool_recycle di SQLAlchemy |
 | SQL Injection melalui form input | Rendah | Sangat Tinggi | Selalu gunakan SQLAlchemy ORM; tidak pernah raw query dari input user |
 | Data nilai terhapus tidak sengaja | Rendah | Sangat Tinggi | Implementasi soft delete; audit log semua operasi DELETE |
 | Performa lambat untuk data besar | Rendah | Sedang | Gunakan pagination DataTables; tambahkan database index |
@@ -1158,7 +1158,8 @@ Contoh Nilai Budi di Matematika:
 FLASK_APP=run.py
 FLASK_ENV=development
 SECRET_KEY=your-secret-key-here
-DATABASE_URL=sqlite:///sipns_dev.db
+DATABASE_URL=mysql+pymysql://root:@localhost:3306/sipns_dev
+DATABASE_URL_TEST=mysql+pymysql://root:@localhost:3306/sipns_test
 ```
 
 ### C. Perintah Setup Awal
@@ -1175,7 +1176,10 @@ python -m venv venv && source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 
 # Setup environment
-cp .env.example .env  # Edit sesuai konfigurasi lokal
+cp .env.example .env  # Edit sesuai konfigurasi lokal (sesuaikan user/password MySQL)
+
+# Buat database MySQL
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS sipns_dev CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # Inisialisasi database
 flask db init
