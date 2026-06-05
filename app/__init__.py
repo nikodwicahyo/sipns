@@ -1,14 +1,29 @@
-import os as _os
+"""
+Modul: __init__.py
+Deskripsi: Application factory untuk SIPNS (Flask).
 
-_gtk_path = r'C:\Program Files\GTK3-Runtime Win64\bin'
-if _os.path.isdir(_gtk_path) and _gtk_path not in _os.environ.get('PATH', ''):
-    _os.environ['PATH'] = _gtk_path + _os.pathsep + _os.environ.get('PATH', '')
+Memuat konfigurasi berdasarkan ``FLASK_ENV`` (development | production | testing),
+mendaftarkan extension (db, migrate, login, csrf), mendaftarkan semua blueprint,
+mendefinisikan error handler, global template context, dan CLI command.
+
+Performance/cold-start optimizations:
+- WhiteNoise dipasang di depan WSGI stack agar static file dilayani
+  langsung dari middleware (sub-ms response) tanpa overhead Flask.
+- /healthz TIDAK menyentuh DB — sub-10ms response, cocok untuk Render
+  health check (default timeout 3s).
+- /healthz/deep menyentuh DB (untuk uptime monitor eksternal).
+- ``os.makedirs('logs', exist_ok=True)`` dipanggil SEBELUM extension apapun
+  agar ProductionConfig.LOG_FILE tidak gagal tulis di cold start pertama.
+"""
+import os
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_wtf import CSRFProtect
+from whitenoise import WhiteNoise
+
 from app.config import config_map
 
 db = SQLAlchemy()
@@ -18,12 +33,36 @@ csrf = CSRFProtect()
 
 
 def create_app(config_name=None):
+    """Application factory SIPNS.
+
+    Args:
+        config_name (str, optional): Salah satu key ``config_map``:
+            ``'development'``, ``'production'``, ``'testing'``.
+            Default: baca dari ``FLASK_ENV`` env var, fallback ``'development'``.
+
+    Returns:
+        Flask: Instance aplikasi Flask yang sudah terinisialisasi penuh.
+    """
     if config_name is None:
-        import os
         config_name = os.getenv('FLASK_ENV', 'development')
+
+    # Pastikan folder logs ada SEBELUM logger apapun menulis ke file.
+    # Penting untuk ProductionConfig yang default-nya log ke logs/sipns.log.
+    os.makedirs('logs', exist_ok=True)
 
     app = Flask(__name__)
     app.config.from_object(config_map[config_name])
+
+    # WhiteNoise: serve static files dari WSGI middleware, lebih cepat
+    # dari Flask's built-in static handler (penting untuk cold start
+    # karena first request tidak perlu instantiate Flask static view).
+    # ``root=app.static_folder`` -> otomatis mengarah ke app/static/.
+    app.wsgi_app = WhiteNoise(
+        app.wsgi_app,
+        root=app.static_folder,
+        prefix='static/',
+        max_age=31536000 if not app.config.get('DEBUG') else 0,
+    )
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -66,6 +105,29 @@ def create_app(config_name=None):
             elif current_user.is_siswa():
                 return redirect(url_for('siswa.dashboard'))
         return render_template('landing.html')
+
+    @app.route('/healthz')
+    def healthz():
+        """Lightweight health check untuk Render (sub-10ms, no DB touch).
+
+        Render health check default timeout 3s, jadi endpoint ini harus
+        secepat mungkin. Jangan query DB di sini; pakai /healthz/deep.
+        """
+        return {'status': 'ok'}, 200
+
+    @app.route('/healthz/deep')
+    def healthz_deep():
+        """Deep health check yang memverifikasi koneksi database.
+
+        Cocok untuk uptime monitor eksternal (UptimeRobot, BetterStack).
+        Return 503 jika DB tidak reachable.
+        """
+        from sqlalchemy import text
+        try:
+            db.session.execute(text('SELECT 1'))
+            return {'status': 'ok', 'db': 'ok'}, 200
+        except Exception as e:
+            return {'status': 'degraded', 'db': 'error', 'error': str(e)[:200]}, 503
 
     from app.utils.time import format_jakarta, current_year_jakarta
 

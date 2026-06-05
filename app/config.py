@@ -51,15 +51,23 @@ class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_ECHO = False
     SESSION_COOKIE_SECURE = True
+    PREFERRED_URL_SCHEME = 'https'
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     if not SQLALCHEMY_DATABASE_URI:
         raise RuntimeError(
             'DATABASE_URL environment variable is required for production. '
             'Format: mysql+pymysql://user:password@host:port/dbname?charset=utf8mb4'
         )
+    # TiDB Cloud WAJIB TLS. ``ssl=True`` -> koneksi terenkripsi, tanpa
+    # verifikasi sertifikat CA (acceptable untuk demo / tugas sekolah).
+    # Untuk strict TLS (verify CA), set DATABASE_URL dengan parameter
+    # ``?ssl_ca=/path&ssl_verify_cert=True`` (lihat docs/DEPLOY_RENDER_TIDB.md).
     SQLALCHEMY_ENGINE_OPTIONS = {
         **Config.SQLALCHEMY_ENGINE_OPTIONS,
-        'connect_args': {'connect_timeout': 10},
+        'connect_args': {
+            'connect_timeout': 10,
+            'ssl': True,
+        },
     }
 
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'WARNING')
