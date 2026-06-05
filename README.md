@@ -1,15 +1,3 @@
----
-title: SIPNS
-emoji: 📚
-colorFrom: blue
-colorTo: green
-sdk: docker
-app_port: 7860
-pinned: false
-license: mit
-short_description: Sistem Informasi Pengolahan Nilai Siswa (Flask + MySQL)
----
-
 # SIPNS — Sistem Informasi Pengolahan Nilai Siswa
 
 > 🌐 **Live Demo:** [https://huggingface.co/spaces/\<username\>/sipns](https://huggingface.co/spaces) (sesuaikan dengan username HF Anda)
