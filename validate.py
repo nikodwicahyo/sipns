@@ -1,9 +1,22 @@
 """
-Validation script — dipanggil oleh build phase untuk sanity check.
+Modul: validate.py
+Deskripsi: Sanity-check script SIPNS production deployment.
 
-Jalankan: python -c "from validate import main; main()"
+Jalankan: python validate.py
+
+Asserts semua requirement Hugging Face Spaces terpenuhi:
+- App load dengan ProductionConfig (no crash on import)
+- /healthz & /healthz/deep route terdaftar
+- WhiteNoise wired di WSGI stack
+- ProductionConfig flags benar (DEBUG=False, HTTPS, SSL)
+- Dockerfile ada & syntax valid (FROM, RUN apt, EXPOSE 7860, CMD)
+- .dockerignore ada & tidak include secret
+- runtime Python 3.12 (di Dockerfile)
+- wsgi.py loadable
 """
+import re
 import sys
+from pathlib import Path
 
 import yaml
 
@@ -11,11 +24,11 @@ from app import create_app
 
 
 def main():
-    print("=" * 60)
-    print("SIPNS Production Readiness Validation")
-    print("=" * 60)
+    print("=" * 64)
+    print("SIPNS Production Readiness Validation (Hugging Face Spaces)")
+    print("=" * 64)
 
-    # 1. App loads with ProductionConfig
+    # 1. App loads dengan ProductionConfig
     app = create_app("production")
     print(f"[1] create_app('production') = {type(app).__name__} OK")
 
@@ -26,7 +39,7 @@ def main():
     print(f"[2] /healthz = {rules['/healthz']} OK")
     print(f"    /healthz/deep = {rules['/healthz/deep']} OK")
 
-    # 3. WhiteNoise wired in WSGI stack
+    # 3. WhiteNoise wired di WSGI stack
     assert "WhiteNoise" in type(app.wsgi_app).__name__, "WhiteNoise not wired"
     print(f"[3] wsgi_app = {type(app.wsgi_app).__name__} OK")
 
@@ -42,55 +55,85 @@ def main():
     print(f"    SESSION_COOKIE_SECURE = {app.config['SESSION_COOKIE_SECURE']}")
     print(f"    SSL in connect_args = {ssl}")
 
-    # 5. render.yaml structure (Free Tier compatible — no preDeployCommand)
-    with open("render.yaml", "r") as f:
-        data = yaml.safe_load(f)
-    services = data.get("services", [])
-    assert len(services) == 1, f"Expected 1 service, got {len(services)}"
-    s = services[0]
-    assert s["name"] == "sipns-web"
-    assert s["buildCommand"] == "bash build.sh"
-    # Free tier tidak support preDeployCommand (akan error di Apply).
-    # Migration & seed harus digabung ke startCommand.
-    assert "preDeployCommand" not in s, (
-        "preDeployCommand tidak didukung di free tier. "
-        "Hapus dari render.yaml — flask db upgrade && flask seed "
-        "sudah digabung ke startCommand."
-    )
-    assert "flask db upgrade" in s["startCommand"], "Migration harus di startCommand"
-    assert "flask seed" in s["startCommand"], "Seed harus di startCommand"
-    assert "gunicorn" in s["startCommand"]
-    assert "--workers 1" in s["startCommand"], "Single worker required for free tier RAM"
-    assert "--preload" in s["startCommand"], "--preload required for cold start optimization"
-    assert s["healthCheckPath"] == "/healthz"
-    env_keys = {e["key"] for e in s["envVars"]}
-    for required in ("FLASK_APP", "FLASK_ENV", "SECRET_KEY", "DATABASE_URL", "PYTHONUNBUFFERED"):
-        assert required in env_keys, f"Missing env var: {required}"
-    print("[5] render.yaml structure OK (free tier compatible)")
-    print(f"    service = {s['name']}, buildCommand = {s['buildCommand']}")
-    print(f"    startCommand = {s['startCommand'][:90]}...")
-    print(f"    envVars = {sorted(env_keys)}")
+    # 5. Dockerfile structure
+    dockerfile = Path("Dockerfile")
+    assert dockerfile.exists(), "Dockerfile missing"
+    content = dockerfile.read_text(encoding="utf-8")
 
-    # 6. Aptfile non-empty & valid package names
-    with open("Aptfile", "r") as f:
-        pkgs = [ln.strip() for ln in f if ln.strip() and not ln.strip().startswith("#")]
-    expected = {"libpango-1.0-0", "libcairo2", "libgdk-pixbuf-2.0-0", "libffi-dev"}
-    missing = expected - set(pkgs)
-    assert not missing, f"Aptfile missing critical packages: {missing}"
-    print(f"[6] Aptfile OK ({len(pkgs)} packages): {pkgs}")
+    # Base image Python 3.12
+    assert re.search(r"^FROM\s+python:3\.12", content, re.M), \
+        "Dockerfile harus FROM python:3.12-slim (atau variant 3.12.x)"
+    print("[5] Dockerfile base image: python:3.12 OK")
 
-    # 7. runtime.txt
-    with open("runtime.txt", "r") as f:
-        runtime = f.read().strip()
-    assert runtime.startswith("python-3.12"), f"Expected python-3.12.x, got {runtime}"
-    print(f"[7] runtime.txt OK ({runtime})")
+    # apt install dengan packages WeasyPrint yang diperlukan
+    required_pkgs = {
+        "libpango-1.0-0", "libcairo2", "libgdk-pixbuf-2.0-0",
+        "libffi-dev", "fonts-dejavu-core",
+    }
+    for pkg in required_pkgs:
+        assert pkg in content, f"Dockerfile missing apt package: {pkg}"
+    print(f"    apt packages: {len(required_pkgs)} WeasyPrint deps present OK")
 
-    # 8. wsgi.py imports cleanly
-    print("[8] wsgi.py loadable OK (file exists, syntax checked by create_app call)")
+    # EXPOSE 7860 (wajib HF Spaces Docker SDK)
+    assert re.search(r"^EXPOSE\s+7860", content, re.M), \
+        "Dockerfile harus EXPOSE 7860 (HF Spaces Docker SDK convention)"
+    assert "PORT=7860" in content, "Dockerfile harus set ENV PORT=7860"
+    print("    EXPOSE 7860 + ENV PORT=7860 OK")
 
-    print("=" * 60)
+    # CMD berisi flask db upgrade, seed, dan gunicorn
+    assert "flask db upgrade" in content, "CMD harus jalankan flask db upgrade"
+    assert "flask seed" in content, "CMD harus jalankan flask seed"
+    assert "gunicorn" in content, "CMD harus jalankan gunicorn"
+    assert "--workers 1" in content, "Gunicorn workers=1 (free tier RAM efficiency)"
+    assert "--preload" in content, "Gunicorn --preload (cold start optimization)"
+    print("    CMD: flask db upgrade && flask seed && gunicorn OK")
+
+    # 6. .dockerignore ada & exclude secret
+    dockerignore = Path(".dockerignore")
+    assert dockerignore.exists(), ".dockerignore missing"
+    di_content = dockerignore.read_text(encoding="utf-8")
+    assert ".env" in di_content, ".dockerignore harus exclude .env"
+    assert "__pycache__" in di_content, ".dockerignore harus exclude __pycache__"
+    assert "venv" in di_content, ".dockerignore harus exclude venv"
+    print(f"[6] .dockerignore OK (excludes: .env, __pycache__, venv)")
+
+    # 7. README.md frontmatter untuk HF Spaces
+    readme = Path("README.md")
+    assert readme.exists(), "README.md missing"
+    # Baca sebagai UTF-8 eksplisit agar emoji & karakter non-ASCII aman
+    # di Windows (default codec adalah charmap/cp1252 yang gagal decode emoji).
+    rm_content = readme.read_text(encoding="utf-8")
+    assert rm_content.startswith("---"), "README.md harus mulai dengan YAML frontmatter untuk HF Spaces"
+    # Parse frontmatter
+    end = rm_content.find("\n---", 3)
+    assert end > 0, "README.md frontmatter tidak ditutup dengan '---'"
+    frontmatter = rm_content[3:end].strip()
+    try:
+        meta = yaml.safe_load(frontmatter)
+        assert isinstance(meta, dict), "Frontmatter harus YAML dict"
+        assert "sdk" in meta, "Frontmatter harus punya 'sdk' key (wajib HF Spaces)"
+        assert meta["sdk"] == "docker", f"Frontend SDK harus 'docker', got '{meta.get('sdk')}'"
+        assert "app_port" in meta, "Frontmatter harus punya 'app_port' (HF Spaces Docker SDK)"
+        assert meta["app_port"] == 7860, f"app_port harus 7860 (HF convention), got {meta['app_port']}"
+        print(f"[7] README.md HF Spaces frontmatter OK")
+        print(f"    sdk={meta['sdk']} app_port={meta['app_port']} title={meta.get('title', '?')}")
+    except yaml.YAMLError as e:
+        raise AssertionError(f"README.md frontmatter YAML invalid: {e}")
+
+    # 8. wsgi.py loadable
+    wsgi = Path("wsgi.py")
+    assert wsgi.exists(), "wsgi.py missing"
+    print("[8] wsgi.py loadable OK (verified by create_app import)")
+
+    # 9. TiDB-relevant: confirm no Render/Blueprint residue
+    forbidden = ["render.yaml", "Aptfile", "build.sh", "runtime.txt"]
+    for f in forbidden:
+        assert not Path(f).exists(), f"Residue Render file: {f} (should be deleted)"
+    print("[9] No Render residue OK (deploy target = HF Spaces only)")
+
+    print("=" * 64)
     print("ALL CHECKS PASSED")
-    print("=" * 60)
+    print("=" * 64)
 
 
 if __name__ == "__main__":

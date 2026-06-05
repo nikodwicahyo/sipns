@@ -1,0 +1,67 @@
+# =============================================================================
+# .dockerignore - File yang di-EXCLUDE dari Docker build context
+# =============================================================================
+# Tujuan: image lebih kecil, build lebih cepat, tidak include secret/dev file.
+# Saat `docker build`, hanya file yang TIDAK match di .dockerignore yang
+# di-copy ke image via `COPY . .` di Dockerfile.
+# =============================================================================
+
+# Git & version control
+.git
+.gitignore
+.gitattributes
+
+# Python cache & virtual env (TIDAK PERLU di image)
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.pytest_cache
+.coverage
+htmlcov
+venv
+.venv
+env
+
+# Environment files (JANGAN PERNAH include secret)
+.env
+.env.*
+!.env.example
+
+# Logs (akan dibuat di runtime oleh container)
+logs/
+*.log
+
+# Tests (tidak perlu di production image)
+tests/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Dokumentasi internal (tidak perlu di image, hanya di repo)
+# KECUALI README.md (dipakai HF untuk metadata) & docs/DEPLOY_*.md (untuk user)
+PRD.md
+docs/PRD.md
+docs/laporan_tugas*.md
+docs/test_cases.md
+docs/debugging_log.md
+docs/seed_credentials.md
+docs/ERD.png
+docs/Use Case Diagram.png
+docs/Activity Diagram.png
+docs/Sequence Diagram.png
+docs/Class Diagram.png
+docs/Wireframe.png
+docs/Flowchart*.png
+docs/screenshots/
+
+# Validation script (untuk dev, tidak perlu di image)
+validate.py
+
+# Migrasi cache
+migrations/__pycache__
