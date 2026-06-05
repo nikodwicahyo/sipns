@@ -544,7 +544,7 @@ Dikembangkan sebagai bagian dari tugas **LSP (Lembaga Sertifikasi Profesi)** unt
 
 **Pemilik:** Niko Dwicahyo Widiyanto  
 **Versi:** 1.0.0  
-**Tahun:** 2025  
+**Tahun:** 2026  
 **Status:** Production-ready ✅
 
 ---
