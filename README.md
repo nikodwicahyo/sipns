@@ -1,6 +1,7 @@
 # SIPNS — Sistem Informasi Pengolahan Nilai Siswa
 
-> 🌐 **Live Demo:** [https://huggingface.co/spaces/\<username\>/sipns](https://huggingface.co/spaces) (sesuaikan dengan username HF Anda)
+> 🌐 **Live Demo:** [https://nikodwicahyo-sipns.hf.space](https://nikodwicahyo-sipns.hf.space)
+
 > 📖 **Tutorial Deploy:** Lihat [`docs/DEPLOY_HUGGINGFACE_TIDB.md`](docs/DEPLOY_HUGGINGFACE_TIDB.md) untuk panduan lengkap step-by-step.
 
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
