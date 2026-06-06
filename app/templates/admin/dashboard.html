@@ -82,47 +82,59 @@
 <div class="card">
     <div class="card-header"><h5>Nilai Terbaru</h5></div>
     <div class="card-body">
-        <table class="table table-striped datatable">
-            <thead>
-                <tr>
-                    <th>Siswa</th>
-                    <th>Mapel</th>
-                    <th>Nilai Akhir</th>
-                    <th>Status</th>
-                    <th>Tanggal</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for n in recent_nilai %}
-                <tr>
-                    <td>{{ n.siswa.nama if n.siswa else '-' }}</td>
-                    <td>{{ n.mata_pelajaran }}</td>
-                    <td>{{ n.nilai_akhir }}</td>
-                    <td>
-                        {% if n.status_lulus is not none %}
-                            <span class="badge {% if n.status_lulus %}bg-success{% else %}bg-danger{% endif %}">
-                                {{ 'Lulus' if n.status_lulus else 'Tidak Lulus' }}
-                            </span>
-                        {% else %}
-                            <span class="badge bg-secondary">-</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ n.created_at | jakarta if n.created_at else '-' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover datatable" id="recentNilaiTable">
+                <thead>
+                    <tr>
+                        <th>Siswa</th>
+                        <th>Mapel</th>
+                        <th>Nilai Akhir</th>
+                        <th>Status</th>
+                        <th>Tanggal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for n in recent_nilai %}
+                    <tr>
+                        <td>{{ n.siswa.nama if n.siswa else '-' }}</td>
+                        <td>{{ n.mata_pelajaran }}</td>
+                        <td>{{ n.nilai_akhir }}</td>
+                        <td>
+                            {% if n.status_lulus is not none %}
+                                <span class="badge {% if n.status_lulus %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Lulus' if n.status_lulus else 'Tidak Lulus' }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ n.created_at | jakarta if n.created_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 <script>
-    const barLabels = {{ chart_labels | tojson }};
-    const barData = {{ chart_data | tojson }};
-    renderBarChart('barChart', barLabels, barData);
+    document.addEventListener('DOMContentLoaded', function() {
+        const barLabels = {{ chart_labels | tojson }};
+        const barData = {{ chart_data | tojson }};
+        renderBarChart('barChart', barLabels, barData);
 
-    const lulus = {{ total_lulus }};
-    const tidakLulus = {{ total_tidak_lulus }};
-    renderDoughnutChart('doughnutChart', lulus, tidakLulus);
+        const lulus = {{ total_lulus }};
+        const tidakLulus = {{ total_tidak_lulus }};
+        renderDoughnutChart('doughnutChart', lulus, tidakLulus);
+
+        // DataTables init for the recent nilai table.
+        $('#recentNilaiTable').DataTable({
+            pageLength: 5,
+            lengthMenu: [[5, 10, 25, -1], [5, 10, 25, "Semua"]],
+            order: []
+        });
+    });
 </script>
 {% endblock %}

@@ -17,6 +17,7 @@ Author : Niko Dwicahyo
 Versi  : 1.0.0
 """
 from app import db
+from app.utils.cache import cached
 from datetime import datetime
 
 
@@ -146,6 +147,7 @@ class Siswa(db.Model):
         return cls.query.filter_by(nis=nis, deleted_at=None).first()
 
     @classmethod
+    @cached(ttl=60)
     def daftar_kelas(cls):
         """Ambil daftar kelas unik yang tersedia (exclude soft-deleted).
 

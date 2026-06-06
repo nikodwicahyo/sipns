@@ -1,48 +1,185 @@
-{% extends "base.html" %}
-{% block title %}Dashboard Guru - SIPNS{% endblock %}
+{% extends "base.html" %} {% block title %}Dashboard Guru - SIPNS{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h3><i class="bi bi-speedometer2"></i> Dashboard Guru</h3>
+<div
+  class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom"
+>
+  <h3><i class="bi bi-speedometer2"></i> Dashboard Guru</h3>
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card text-bg-primary">
-            <div class="card-body">
-                <h6>Mata Pelajaran</h6>
-                <h4>{{ mata_pelajaran }}</h4>
-            </div>
+  <div class="col-md-3">
+    <div class="card text-bg-primary h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Total Siswa</h6>
+            <h2 class="mb-0">{{ total_siswa }}</h2>
+            <small class="opacity-75"
+              >Siswa pada Mapel: {{ mata_pelajaran }}</small
+            >
+          </div>
+          <i class="bi bi-people fs-1 opacity-50"></i>
         </div>
+      </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-bg-success">
-            <div class="card-body">
-                <h6>Jumlah Siswa</h6>
-                <h4>{{ total_siswa }}</h4>
-            </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-success h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Kelas Diampu</h6>
+            <h2 class="mb-0">{{ kelas_list | length }}</h2>
+            <small class="opacity-75"
+              >{{ kelas_list | join(', ') if kelas_list else 'Belum ada'
+              }}</small
+            >
+          </div>
+          <i class="bi bi-building fs-1 opacity-50"></i>
         </div>
+      </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-bg-info">
-            <div class="card-body">
-                <h6>Kelas Diampu</h6>
-                <h4>{{ kelas_list | length }}</h4>
-            </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-info h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Siswa Dinilai Vs Belum Dinilai</h6>
+            <h2 class="mb-0">
+              {{ siswa_dinilai }} <span class="opacity-50">vs</span>
+              {{ siswa_belum_dinilai }}
+            </h2>
+            <small class="opacity-75"
+              >dari {{ total_siswa }} total siswa</small
+            >
+          </div>
+          <i class="bi bi-person-check fs-1 opacity-50"></i>
         </div>
+      </div>
     </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-bg-warning h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h6 class="card-title">Rata-rata Nilai</h6>
+            <h2 class="mb-0">{{ rata_rata }} %</h2>
+            <small class="opacity-75">Kelulusan: {{ persen_lulus }}%</small>
+          </div>
+          <i class="bi bi-calculator fs-1 opacity-50"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">Rata-rata Nilai per Kelas</h5>
+      </div>
+      <div class="card-body d-flex" style="height: 300px; padding: 0">
+        <canvas id="barChart" style="width: 100%; height: 100%"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header"><h5 class="mb-0">Rasio Kelulusan</h5></div>
+      <div class="card-body d-flex" style="height: 300px; padding: 0">
+        <canvas id="doughnutChart" style="width: 100%; height: 100%"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header"><h5 class="mb-0">Nilai Terbaru</h5></div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped table-hover datatable" id="recentNilaiGuruTable">
+        <thead>
+          <tr>
+            <th>Siswa</th>
+            <th>Kelas</th>
+            <th>Tugas</th>
+            <th>UTS</th>
+            <th>UAS</th>
+            <th>Nilai Akhir</th>
+            <th>Status</th>
+            <th>Tanggal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for n in recent_nilai %}
+          <tr>
+            <td>{{ n.siswa.nama if n.siswa else '-' }}</td>
+            <td>{{ n.siswa.kelas if n.siswa else '-' }}</td>
+            <td>{{ n.nilai_tugas }}</td>
+            <td>{{ n.nilai_uts }}</td>
+            <td>{{ n.nilai_uas }}</td>
+            <td><strong>{{ n.nilai_akhir }}</strong></td>
+            <td>
+              {% if n.status_lulus is not none %}
+              <span
+                class="badge {% if n.status_lulus %}bg-success{% else %}bg-danger{% endif %}"
+              >
+                {{ 'Lulus' if n.status_lulus else 'Tidak Lulus' }}
+              </span>
+              {% else %}
+              <span class="badge bg-secondary">-</span>
+              {% endif %}
+            </td>
+            <td>{{ n.created_at | jakarta if n.created_at else '-' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="text-center text-muted">
+              Belum ada nilai yang diinput.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <div class="card">
-    <div class="card-header">
-        <h5>Aksi Cepat</h5>
-    </div>
-    <div class="card-body">
-        <a href="{{ url_for('guru.input_nilai') }}" class="btn btn-primary me-2">
-            <i class="bi bi-pencil-square"></i> Input Nilai Baru
-        </a>
-        <a href="{{ url_for('guru.rekap_nilai') }}" class="btn btn-secondary">
-            <i class="bi bi-table"></i> Lihat Rekap
-        </a>
-    </div>
+  <div class="card-header"><h5 class="mb-0">Aksi Cepat</h5></div>
+  <div class="card-body">
+    <a href="{{ url_for('guru.input_nilai') }}" class="btn btn-primary me-2">
+      <i class="bi bi-pencil-square"></i> Input Nilai Baru
+    </a>
+    <a href="{{ url_for('guru.rekap_nilai') }}" class="btn btn-secondary">
+      <i class="bi bi-table"></i> Lihat Rekap
+    </a>
+  </div>
 </div>
+{% endblock %} {% block extra_js %}
+<script
+  src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+  defer
+></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+      const barLabels = {{ chart_labels | tojson }};
+      const barData = {{ chart_data | tojson }};
+      renderBarChart('barChart', barLabels, barData);
+
+      const lulus = {{ total_lulus }};
+      const tidakLulus = {{ total_tidak_lulus }};
+      renderDoughnutChart('doughnutChart', lulus, tidakLulus);
+
+      // DataTables init for the recent nilai table.
+      $('#recentNilaiGuruTable').DataTable({
+          pageLength: 5,
+          lengthMenu: [[5, 10, 25, -1], [5, 10, 25, "Semua"]],
+          order: []
+      });
+  });
+</script>
 {% endblock %}

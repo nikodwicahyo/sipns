@@ -1,4 +1,4 @@
-function renderBarChart(canvasId, labels, data) {
+function renderBarChart(canvasId, labels, data, datasetLabel) {
     var ctx = document.getElementById(canvasId);
     if (!ctx) return;
     new Chart(ctx.getContext('2d'), {
@@ -6,7 +6,7 @@ function renderBarChart(canvasId, labels, data) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Rata-rata Nilai',
+                label: datasetLabel || 'Rata-rata Nilai',
                 data: data,
                 backgroundColor: 'rgba(13, 110, 253, 0.6)',
                 borderColor: 'rgba(13, 110, 253, 1)',

@@ -34,9 +34,14 @@ logger = logging.getLogger(__name__)
 @login_required
 @role_required('siswa')
 def dashboard():
-    """Halaman dashboard siswa: ringkasan nilai pribadi & status kelulusan.
+    """Halaman dashboard siswa: ringkasan nilai pribadi & visualisasi.
 
     Guard: jika user tidak terkait Siswa (orphan account) → flash & logout.
+    Menghitung:
+    - Statistik agregat nilai siswa.
+    - Status kelulusan global (semua mapel Lulus / Tidak Lulus).
+    - Total mata pelajaran yang sudah dinilai.
+    - Chart data: perbandingan nilai per mapel (radar) + rasio kelulusan (doughnut).
     """
     siswa = Siswa.query.get(current_user.siswa_id)
     if not siswa:
@@ -47,10 +52,46 @@ def dashboard():
     nilai_list = Nilai.query.filter_by(siswa_id=siswa.id).all()
     stat = hitung_statistik_kelas(nilai_list)
 
-    return render_template('siswa/dashboard.html',
-                           siswa=siswa,
-                           nilai_list=nilai_list,
-                           stat=stat)
+    # Precompute status global dari nilai_list yang sudah di-load
+    # untuk menghindari query ulang dari template via siswa.status_kelulusan_global().
+    records = [n for n in nilai_list if n.status_lulus is not None]
+    if not records:
+        status_global = 'Belum Ada Nilai'
+    else:
+        status_global = 'Lulus' if all(n.status_lulus for n in records) else 'Tidak Lulus'
+
+    # Total mata pelajaran unik yang sudah dinilai.
+    total_mapel = len({n.mata_pelajaran for n in nilai_list if n.mata_pelajaran})
+
+    # Counts kelulusan untuk doughnut chart.
+    total_lulus = sum(1 for n in nilai_list if n.status_lulus is True)
+    total_tidak_lulus = sum(1 for n in nilai_list if n.status_lulus is False)
+
+    # Chart data: nilai per mapel (untuk radar chart).
+    # Diurutkan berdasarkan nama mapel untuk konsistensi visual.
+    mapel_nilai_pairs = sorted(
+        [
+            (n.mata_pelajaran, float(n.nilai_akhir))
+            for n in nilai_list
+            if n.nilai_akhir is not None and n.mata_pelajaran
+        ],
+        key=lambda x: x[0],
+    )
+    chart_labels = [p[0] for p in mapel_nilai_pairs]
+    chart_data = [p[1] for p in mapel_nilai_pairs]
+
+    return render_template(
+        'siswa/dashboard.html',
+        siswa=siswa,
+        nilai_list=nilai_list,
+        stat=stat,
+        status_global=status_global,
+        total_mapel=total_mapel,
+        total_lulus=total_lulus,
+        total_tidak_lulus=total_tidak_lulus,
+        chart_labels=chart_labels,
+        chart_data=chart_data,
+    )
 
 
 # ===========================================================================

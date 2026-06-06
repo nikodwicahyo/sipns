@@ -7,7 +7,41 @@
 
 <div class="card">
     <div class="card-body">
-        <table class="table datatable" id="userTable">
+        {# Filter bar di atas tabel (Role & Status).                #}
+        {# Pakai client-side DataTables column search — dataset user #}
+        {# kecil (umumnya <200 baris), sehingga filtering instan    #}
+        {# tanpa round-trip ke server.                              #}
+        <div class="row g-2 mb-3 align-items-center">
+            <div class="col-auto">
+                <label for="filterRole" class="col-form-label">Role</label>
+            </div>
+            <div class="col-md-2">
+                <select id="filterRole" class="form-select form-select-sm">
+                    <option value="">-- Semua Role --</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Guru">Guru</option>
+                    <option value="Siswa">Siswa</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <label for="filterStatus" class="col-form-label">Status</label>
+            </div>
+            <div class="col-md-2">
+                <select id="filterStatus" class="form-select form-select-sm">
+                    <option value="">-- Semua Status --</option>
+                    <option value="Aktif">Aktif</option>
+                    <option value="Nonaktif">Nonaktif</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="button" id="resetFilter" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover datatable" id="userTable">
             <thead>
                 <tr>
                     <th>Username</th>
@@ -41,7 +75,7 @@
                         <form action="{{ url_for('admin.toggle_aktif_user', id=u.id) }}" method="POST" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button class="btn btn-sm btn-outline-{{ 'warning' if u.is_active else 'success' }}"
-                                    onclick="return confirm('{{ 'Nonaktifkan' if u.is_active else 'Aktifkan' }} user {{ u.username }}?')">
+                                    onclick="confirmToggleAktif('{{ url_for('admin.toggle_aktif_user', id=u.id) }}', '{{ u.username }}', {{ 'true' if u.is_active else 'false' }})">
                                 <i class="bi bi-{{ 'pause-circle' if u.is_active else 'play-circle' }}"></i>
                             </button>
                         </form>
@@ -51,7 +85,7 @@
                         <form action="{{ url_for('admin.hapus_user', id=u.id) }}" method="POST" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button class="btn btn-sm btn-outline-danger"
-                                    onclick="return confirm('Hapus user {{ u.username }}?')" title="Hapus">
+                                    onclick="confirmHapus('{{ url_for('admin.hapus_user', id=u.id) }}', 'user {{ u.username }}')" title="Hapus">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>
@@ -60,14 +94,39 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 {% endblock %}
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        $('#userTable').DataTable({
-            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json' }
+        var table = $('#userTable').DataTable({
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Semua"]]
+        });
+
+        // Filter Role (kolom index 1) — match persis dengan teks badge.
+        $('#filterRole').on('change', function () {
+            var val = $(this).val();
+            // Argumen (search, regex, smart) — pakai literal string tanpa regex
+            // dan smart-search agar match persis.
+            table.column(1).search(val, false, false).draw();
+        });
+
+        // Filter Status (kolom index 2).
+        $('#filterStatus').on('change', function () {
+            var val = $(this).val();
+            table.column(2).search(val, false, false).draw();
+        });
+
+        // Reset kedua filter + clear input search global DataTables.
+        $('#resetFilter').on('click', function () {
+            $('#filterRole').val('');
+            $('#filterStatus').val('');
+            table.column(1).search('', false, false);
+            table.column(2).search('', false, false);
+            table.search('').draw();
         });
     });
 </script>

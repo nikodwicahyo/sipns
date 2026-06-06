@@ -4,7 +4,7 @@
         margin: 1.5cm;
     }
 
-    .navbar, .sidebar, .btn, .dataTables_filter,
+    .navbar, .sidebar, .app-sidebar, .offcanvas, .btn, .dataTables_filter,
     .dataTables_length, .dataTables_paginate,
     .dataTables_info, .dataTables_processing,
     .border-bottom, .pt-3, .pb-2 {
@@ -20,6 +20,7 @@
     main {
         margin-top: 0 !important;
         margin-left: 0 !important;
+        max-width: 100% !important;
         padding: 0 !important;
     }
 

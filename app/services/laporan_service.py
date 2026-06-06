@@ -52,14 +52,15 @@ def _get_base_url():
     return None
 
 
-def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html', mata_pelajaran=None,
-                        guru_id=None, siswa_id=None, status_lulus=None,
-                        filter_info=None):
-    """Generate PDF laporan rekap nilai seluruh siswa dalam satu kelas.
+def generate_laporan_pdf(kelas=None, template='laporan/rekap_kelas.html',
+                        mata_pelajaran=None, guru_id=None, siswa_id=None,
+                        status_lulus=None, filter_info=None):
+    """Generate PDF laporan rekap nilai siswa.
 
     Args:
-        kelas (str): Nama kelas (mis. ``"X-IPA-1"``). Akan di-join dengan
-            tabel ``siswa`` untuk mengambil siswa aktif (``deleted_at IS NULL``).
+        kelas (str, optional): Nama kelas (mis. ``"X-IPA-1"``) untuk filter
+            satu kelas. Jika ``None``, semua kelas akan disertakan dan
+            data diurutkan ``(kelas, nama)`` dengan kolom Kelas di PDF.
         template (str, optional): Path template Jinja2 untuk body PDF.
             Default ``'laporan/rekap_kelas.html'``. Bisa di-override untuk
             template alternatif (mis. template bulanan).
@@ -93,15 +94,21 @@ def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html', mata_pelaja
     import weasyprint
     from werkzeug.exceptions import HTTPException
     # Lazy import untuk menghindari circular import (lihat catatan modul).
+    from app import db as _db
     from app.models.nilai import Nilai
     from app.models.siswa import Siswa
     try:
-        # Query nilai + siswa dalam satu JOIN, filter deleted siswa.
+        # Query nilai + siswa dalam satu JOIN dengan eagerload siswa.
+        # Eagerload mencegah N+1 query saat template mengakses n.siswa.nama dll.
         query = (
             Nilai.query
+            .options(_db.joinedload(Nilai.siswa))
             .join(Siswa, Nilai.siswa_id == Siswa.id)
-            .filter(Siswa.kelas == kelas, Siswa.deleted_at.is_(None))
+            .filter(Siswa.deleted_at.is_(None))
         )
+        # Filter kelas opsional. None = semua kelas.
+        if kelas:
+            query = query.filter(Siswa.kelas == kelas)
         # Filter mata pelajaran jika diisi (akses guru → mapel guru saja).
         if mata_pelajaran:
             query = query.filter(Nilai.mata_pelajaran == mata_pelajaran)
@@ -113,7 +120,12 @@ def generate_laporan_pdf(kelas, template='laporan/rekap_kelas.html', mata_pelaja
             query = query.filter(Nilai.status_lulus.is_(True))
         elif status_lulus == 'tidak_lulus':
             query = query.filter(Nilai.status_lulus.is_(False))
-        data_nilai = query.order_by(Siswa.nama).all()
+        # Ordering: bila tanpa kelas, urutkan per kelas lalu nama; kalau
+        # ada kelas, urutkan nama saja.
+        if kelas:
+            data_nilai = query.order_by(Siswa.nama).all()
+        else:
+            data_nilai = query.order_by(Siswa.kelas, Siswa.nama).all()
 
         # Statistik agregat (rata-rata, tertinggi, dll) untuk footer PDF.
         statistik = hitung_statistik_kelas(data_nilai)
@@ -231,7 +243,7 @@ def export_excel(kelas=None, dicetak_oleh=None, mata_pelajaran=None,
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
     from io import BytesIO
-    # Lazy import — lihat generate_laporan_pdf untuk konteks.
+    from app import db as _db
     from app.models.nilai import Nilai
     from app.models.siswa import Siswa
 
@@ -243,6 +255,7 @@ def export_excel(kelas=None, dicetak_oleh=None, mata_pelajaran=None,
     # === 2. Query data ===
     query = (
         Nilai.query
+        .options(_db.joinedload(Nilai.siswa))
         .join(Siswa, Nilai.siswa_id == Siswa.id)
         .filter(Siswa.deleted_at.is_(None))
     )

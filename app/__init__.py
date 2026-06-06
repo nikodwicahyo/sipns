@@ -23,6 +23,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_wtf import CSRFProtect
 from whitenoise import WhiteNoise
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.config import config_map
 
@@ -46,12 +47,19 @@ def create_app(config_name=None):
     if config_name is None:
         config_name = os.getenv('FLASK_ENV', 'development')
 
+    import pymysql
+    pymysql.install_as_MySQLdb()
+
     # Pastikan folder logs ada SEBELUM logger apapun menulis ke file.
     # Penting untuk ProductionConfig yang default-nya log ke logs/sipns.log.
     os.makedirs('logs', exist_ok=True)
 
     app = Flask(__name__)
     app.config.from_object(config_map[config_name])
+
+    # ProxyFix: percayai header X-Forwarded-* dari reverse proxy (HF Spaces).
+    # ``x_for=1, x_proto=1`` -> 1 hop proxy.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     # WhiteNoise: serve static files dari WSGI middleware, lebih cepat
     # dari Flask's built-in static handler (penting untuk cold start

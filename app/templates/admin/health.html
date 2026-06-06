@@ -53,46 +53,65 @@
 <div class="card">
     <div class="card-header"><h5><i class="bi bi-info-circle"></i> Detail</h5></div>
     <div class="card-body">
-        <table class="table table-bordered">
-            <tbody>
-                <tr>
-                    <th style="width: 200px;">Aplikasi</th>
-                    <td>{{ app_name }}</td>
-                </tr>
-                <tr>
-                    <th>Environment</th>
-                    <td>
-                        <span class="badge {% if flask_env == 'production' %}bg-danger{% elif flask_env == 'development' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                            {{ flask_env }}
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Timestamp</th>
-                    <td>{{ timestamp | jakarta('%d/%m/%Y %H:%M:%S') }} WIB</td>
-                </tr>
-                <tr>
-                    <th>Database Status</th>
-                    <td>
-                        {% if db_status.status == 'connected' %}
-                            <span class="badge bg-success">Connected</span>
-                        {% else %}
-                            <span class="badge bg-danger">Error</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <th>Database Response</th>
-                    <td>{{ db_status.response_time_ms }} ms</td>
-                </tr>
-                {% if db_error %}
-                <tr>
-                    <th>Error Message</th>
-                    <td><code class="text-danger">{{ db_error }}</code></td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-bordered datatable" id="healthDetailTable">
+                <thead class="d-none">
+                    <tr>
+                        <th>Properti</th>
+                        <th>Nilai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th style="width: 200px;">Aplikasi</th>
+                        <td>{{ app_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Environment</th>
+                        <td>
+                            <span class="badge {% if flask_env == 'production' %}bg-danger{% elif flask_env == 'development' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ flask_env }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Timestamp</th>
+                        <td>{{ timestamp | jakarta('%d/%m/%Y %H:%M:%S') }} WIB</td>
+                    </tr>
+                    <tr>
+                        <th>Database Status</th>
+                        <td>
+                            {% if db_status.status == 'connected' %}
+                                <span class="badge bg-success">Connected</span>
+                            {% else %}
+                                <span class="badge bg-danger">Error</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Database Response</th>
+                        <td>{{ db_status.response_time_ms }} ms</td>
+                    </tr>
+                    {% if db_error %}
+                    <tr>
+                        <th>Error Message</th>
+                        <td><code class="text-danger">{{ db_error }}</code></td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#healthDetailTable').DataTable({
+            paging: false,
+            info: false,
+            searching: false
+        });
+    });
+</script>
 {% endblock %}

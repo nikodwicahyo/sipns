@@ -42,7 +42,8 @@
 
 <div class="card">
     <div class="card-body">
-        <table class="table table-striped datatable" id="rekapTable">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover datatable" id="rekapTable">
             <thead>
                 <tr>
                     <th>NIS</th>
@@ -86,10 +87,10 @@
                         <a href="{{ url_for('guru.edit_nilai', id=n.id) }}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        <form action="{{ url_for('guru.kunci_nilai', id=n.id) }}" method="POST" class="d-inline"
-                              onsubmit="return confirm('Kunci nilai ini? Nilai tidak dapat diubah setelah dikunci.')">
+                        <form action="{{ url_for('guru.kunci_nilai', id=n.id) }}" method="POST" class="d-inline">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button class="btn btn-sm btn-outline-success">
+                            <button type="button" class="btn btn-sm btn-outline-success"
+                                    onclick="confirmKunciNilai(this.form)">
                                 <i class="bi bi-lock"></i>
                             </button>
                         </form>
@@ -101,6 +102,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -108,7 +110,17 @@
 <script>
     $(document).ready(function() {
         $('#rekapTable').DataTable({
-            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json' }
+            language: {
+                processing: "Memproses...",
+                lengthMenu: "Tampilkan _MENU_ data",
+                zeroRecords: "Tidak ditemukan data",
+                info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                infoEmpty: "Menampilkan 0 sampai 0 dari 0 data",
+                infoFiltered: "(disaring dari _MAX_ data keseluruhan)",
+                search: "Cari:"
+            },
+            pageLength: 10,
+            lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Semua"]]
         });
     });
 </script>

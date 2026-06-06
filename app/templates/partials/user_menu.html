@@ -1,0 +1,19 @@
+{# Partial: user info + logout. Reused di dua tempat:                     #}
+{# 1. Di dalam offcanvas sidebar (mobile/tablet) — tampil sebagai block.  #}
+{# 2. Di dalam dropdown navbar (desktop) — tampil sebagai menu items.    #}
+{# Markup di sini netral (bukan dropdown-menu) supaya bisa dipakai di     #}
+{# kedua konteks via wrapper berbeda.                                     #}
+<div class="user-menu">
+    <div class="px-3 py-2 border-bottom">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-person-circle fs-4 me-2"></i>
+            <div>
+                <div class="fw-semibold">{{ current_user.username }}</div>
+                <small class="text-muted">{{ current_user.role|upper }}</small>
+            </div>
+        </div>
+    </div>
+    <a href="#" class="d-block px-3 py-2 text-danger text-decoration-none user-menu-logout" onclick="confirmLogout(event)">
+        <i class="bi bi-box-arrow-right"></i> Logout
+    </a>
+</div>

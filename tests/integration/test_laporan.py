@@ -29,12 +29,11 @@ class TestLaporanPDF:
         assert 'rekap_X-IPA-1' in response.headers['Content-Disposition']
 
     def test_pdf_kelas_tanpa_nilai_redirect(self, login_admin, db):
-        """TC-LAP-03: PDF kelas tanpa nilai -> redirect dengan flash."""
-        # TIDAK ada siswa/nilai di kelas ini
+        """TC-LAP-03: PDF kelas tanpa nilai -> tetap 200 (PDF kosong)."""
+        # TIDAK ada siswa/nilai di kelas ini — service tetap generate PDF kosong
         response = login_admin.get('/laporan/pdf/kelas/XI-IPS-99', follow_redirects=False)
-        # Redirect ke halaman index dengan flash
-        assert response.status_code == 302
-        assert '/laporan' in response.headers['Location']
+        assert response.status_code == 200
+        assert response.content_type == 'application/pdf'
 
     def test_pdf_transkrip_siswa(self, login_admin, sample_siswa, sample_nilai):
         """GET /laporan/pdf/transkrip/<siswa_id> -> 200 + application/pdf."""
@@ -329,14 +328,14 @@ class TestLaporanRoleBased:
     def test_guru_tanpa_record_untuk_kelas_redirect(
         self, login_guru, guru_user, sample_siswa, db
     ):
-        """Guru minta kelas yang TIDAK punya nilai mapel-nya → redirect.
+        """Guru minta kelas yang TIDAK punya nilai mapel-nya → tetap 200 (PDF kosong).
 
         Fixture sample_siswa sudah ada 2 siswa di X-IPA-1, tapi tanpa Nilai.
-        Guru Matematika minta PDF X-IPA-1 → harus redirect dengan flash.
+        Guru Matematika minta PDF X-IPA-1 → service generate PDF kosong.
         """
         response = login_guru.get('/laporan/pdf/kelas/X-IPA-1', follow_redirects=False)
-        assert response.status_code == 302
-        assert '/laporan' in response.headers['Location']
+        assert response.status_code == 200
+        assert response.content_type == 'application/pdf'
 
 
 # ===========================================================================
@@ -449,21 +448,22 @@ class TestFilterPDF:
         assert 'lulus' in cd
 
     def test_pdf_filter_tanpa_kelas_redirect(self, login_admin, sample_nilai):
-        """PDF filter tanpa kelas → redirect (kelas wajib)."""
+        """PDF filter tanpa kelas → 200 (kelas opsional, semua kelas)."""
         response = login_admin.get(
             '/laporan/pdf/filter?mata_pelajaran=Matematika',
             follow_redirects=False,
         )
-        assert response.status_code == 302
-        assert '/laporan' in response.headers['Location']
+        assert response.status_code == 200
+        assert response.content_type == 'application/pdf'
 
     def test_pdf_filter_tidak_ada_data_redirect(self, login_admin, sample_siswa, db):
-        """PDF filter dengan filter yang tidak match → redirect."""
+        """PDF filter dengan filter yang tidak match → tetap 200 (PDF kosong)."""
         response = login_admin.get(
             '/laporan/pdf/filter?kelas=X-IPA-1&mata_pelajaran=Tidak%20Ada',
             follow_redirects=False,
         )
-        assert response.status_code == 302
+        assert response.status_code == 200
+        assert response.content_type == 'application/pdf'
 
     def test_pdf_filter_invalid_guru_redirect(self, login_admin, sample_guru, sample_nilai, db):
         """PDF filter dengan guru_id soft-deleted → redirect dengan flash."""

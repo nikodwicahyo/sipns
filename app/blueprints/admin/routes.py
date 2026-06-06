@@ -31,7 +31,7 @@ from app.forms.guru_forms import GuruForm
 from app.forms.user_forms import TambahUserForm, EditUserForm, ResetPasswordForm
 from app.services.audit_service import catat_audit_log
 from app.services.nilai_service import hitung_statistik_kelas
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 logger = logging.getLogger(__name__)
 
@@ -62,41 +62,63 @@ def dashboard():
     total_guru = Guru.query.filter(Guru.deleted_at.is_(None)).count()
     total_nilai = Nilai.query.count()
 
-    # Hitung kelulusan global: loop siswa, cek apakah SEMUA mapel lulus.
-    siswa_list = Siswa.query.filter(Siswa.deleted_at.is_(None)).all()
-    total_lulus = 0
-    total_tidak_lulus = 0
-    for s in siswa_list:
-        # Ambil record nilai yang punya status_lulus (skip None = belum dihitung).
-        nilai_records = s.nilai.filter(Nilai.status_lulus.isnot(None)).all()
-        if not nilai_records:
-            continue
-        if all(n.status_lulus for n in nilai_records):
-            total_lulus += 1
-        else:
-            total_tidak_lulus += 1
-    # Guard division by zero — jika belum ada nilai, persen = 0.
+    # Hitung kelulusan global via aggregated query (no N+1).
+    # Subquery: hitung distinct siswa yang lulus/tidak lulus per mapel.
+    subq_status = (
+        db.session.query(
+            Nilai.siswa_id,
+            func.min(Nilai.status_lulus).label('min_lulus'),
+        )
+        .join(Siswa, Nilai.siswa_id == Siswa.id)
+        .filter(
+            Siswa.deleted_at.is_(None),
+            Nilai.status_lulus.isnot(None),
+        )
+        .group_by(Nilai.siswa_id)
+        .subquery()
+    )
+    kelulusan = (
+        db.session.query(
+            func.count(case((subq_status.c.min_lulus == True, 1))).label('lulus'),
+            func.count(case((subq_status.c.min_lulus == False, 1))).label('tidak_lulus'),
+        )
+        .select_from(subq_status)
+        .first()
+    )
+    total_lulus = kelulusan.lulus if kelulusan else 0
+    total_tidak_lulus = kelulusan.tidak_lulus if kelulusan else 0
     persen_lulus = (
         round((total_lulus / (total_lulus + total_tidak_lulus) * 100), 1)
         if (total_lulus + total_tidak_lulus) > 0
         else 0
     )
 
-    # 10 nilai terbaru untuk tabel ringkasan di dashboard.
-    recent_nilai = Nilai.query.order_by(Nilai.created_at.desc()).limit(10).all()
+    # 10 nilai terbaru (with eager-loaded siswa to avoid N+1 in template).
+    recent_nilai = (
+        Nilai.query
+        .options(db.joinedload(Nilai.siswa))
+        .order_by(Nilai.created_at.desc())
+        .limit(10)
+        .all()
+    )
 
-    # Chart data: rata-rata nilai per kelas (untuk bar chart).
-    kelas_list = Siswa.daftar_kelas()
-    chart_labels = []
-    chart_data = []
-    for kelas in kelas_list:
-        # Query JOIN Nilai+Siswa, filter per kelas (exclude soft-deleted siswa).
-        data_nilai = Nilai.query.join(Siswa, Nilai.siswa_id == Siswa.id).filter(
-            Siswa.kelas == kelas, Siswa.deleted_at.is_(None)
-        ).all()
-        stat = hitung_statistik_kelas(data_nilai)
-        chart_labels.append(kelas)
-        chart_data.append(stat['rata_rata'])
+    # Chart data: rata-rata nilai per kelas via single GROUP BY query.
+    chart_rows = (
+        db.session.query(
+            Siswa.kelas.label('kelas'),
+            func.avg(Nilai.nilai_akhir).label('rata_rata'),
+        )
+        .join(Nilai, Nilai.siswa_id == Siswa.id)
+        .filter(
+            Siswa.deleted_at.is_(None),
+            Nilai.nilai_akhir.isnot(None),
+        )
+        .group_by(Siswa.kelas)
+        .order_by(Siswa.kelas)
+        .all()
+    )
+    chart_labels = [r.kelas for r in chart_rows]
+    chart_data = [round(float(r.rata_rata), 2) if r.rata_rata else 0 for r in chart_rows]
 
     return render_template('admin/dashboard.html',
                            total_siswa=total_siswa,
@@ -127,7 +149,34 @@ def daftar_siswa():
         Response: Render ``admin/siswa/index.html`` dengan list siswa.
     """
     siswa_list = Siswa.query.filter(Siswa.deleted_at.is_(None)).all()
-    return render_template('admin/siswa/index.html', siswa_list=siswa_list)
+    # Batch-load semua nilai untuk semua siswa (1 query instead of N+1).
+    if siswa_list:
+        siswa_ids = [s.id for s in siswa_list]
+        semua_nilai = Nilai.query.filter(
+            Nilai.siswa_id.in_(siswa_ids),
+            Nilai.status_lulus.isnot(None),
+        ).all()
+        nilai_by_siswa = {}
+        for n in semua_nilai:
+            nilai_by_siswa.setdefault(n.siswa_id, []).append(n)
+        # Precompute rata-rata & status per siswa.
+        siswa_stats = {}
+        for s in siswa_list:
+            records = nilai_by_siswa.get(s.id, [])
+            if records:
+                rata = round(sum(float(n.nilai_akhir or 0) for n in records) / len(records), 2)
+                lulus = all(n.status_lulus for n in records)
+                status = 'Lulus' if lulus else 'Tidak Lulus'
+            else:
+                rata = 0.0
+                status = 'Belum Ada Nilai'
+            siswa_stats[s.id] = {'rata_rata': rata, 'status': status}
+    else:
+        nilai_by_siswa = {}
+        siswa_stats = {}
+    return render_template('admin/siswa/index.html',
+                           siswa_list=siswa_list,
+                           siswa_stats=siswa_stats)
 
 
 @admin_bp.route('/siswa/tambah', methods=['GET', 'POST'])
@@ -267,7 +316,9 @@ def detail_siswa(id):
         Response: Render ``admin/siswa/detail.html``.
     """
     siswa = Siswa.query.get_or_404(id)
-    nilai_list = Nilai.query.filter_by(siswa_id=id).all()
+    nilai_list = Nilai.query.filter_by(siswa_id=id).options(
+        db.joinedload(Nilai.guru)
+    ).all()
     return render_template('admin/siswa/detail.html', siswa=siswa, nilai_list=nilai_list)
 
 
@@ -284,7 +335,9 @@ def daftar_guru():
     Returns:
         Response: Render ``admin/guru/index.html`` dengan list guru.
     """
-    guru_list = Guru.query.filter(Guru.deleted_at.is_(None)).all()
+    guru_list = Guru.query.options(db.joinedload(Guru.user)).filter(
+        Guru.deleted_at.is_(None)
+    ).all()
     return render_template('admin/guru/index.html', guru_list=guru_list)
 
 
@@ -404,7 +457,9 @@ def hapus_guru(id):
 @role_required('admin')
 def daftar_user():
     """Halaman daftar semua user (admin, guru, siswa)."""
-    users = User.query.all()
+    users = User.query.options(
+        db.joinedload(User.siswa), db.joinedload(User.guru)
+    ).all()
     return render_template('admin/users/index.html', users=users)
 
 
@@ -522,7 +577,12 @@ def hapus_user(id):
 @login_required
 @role_required('admin')
 def audit_log():
-    """Halaman viewer audit log (urut descending by created_at)."""
+    """Halaman viewer audit log (DataTables client-side pagination + search).
+
+    Mengembalikan seluruh log (descending by created_at) agar dapat di-
+    paginasi & dicari client-side via DataTables — konsisten dengan tabel
+    lain di aplikasi.
+    """
     logs = AuditLog.query.order_by(AuditLog.created_at.desc()).all()
     return render_template('admin/audit/index.html', logs=logs)
 
@@ -632,10 +692,26 @@ def api_nilai_preview():
 @login_required
 @role_required('admin')
 def api_statistik_kelas(kelas):
-    """API: Statistik agregat nilai per kelas (untuk Chart.js)."""
-    data_nilai = Nilai.query.join(Siswa, Nilai.siswa_id == Siswa.id).filter(
-        Siswa.kelas == kelas, Siswa.deleted_at.is_(None)
-    ).all()
-    from app.services.nilai_service import hitung_statistik_kelas
-    stat = hitung_statistik_kelas(data_nilai)
-    return jsonify(stat)
+    """API: Statistik agregat nilai per kelas (1 SQL, tanpa transfer data)."""
+    stat = db.session.query(
+        func.count(Nilai.nilai_akhir).label('total'),
+        func.avg(Nilai.nilai_akhir).label('rata_rata'),
+        func.max(Nilai.nilai_akhir).label('tertinggi'),
+        func.min(Nilai.nilai_akhir).label('terendah'),
+        func.sum(case((Nilai.status_lulus == True, 1), else_=0)).label('jumlah_lulus'),
+        func.sum(case((Nilai.status_lulus == False, 1), else_=0)).label('jumlah_tidak_lulus'),
+    ).join(Siswa, Nilai.siswa_id == Siswa.id).filter(
+        Siswa.kelas == kelas,
+        Siswa.deleted_at.is_(None),
+    ).first()
+
+    total = stat.total or 0
+    return jsonify({
+        'total': total,
+        'rata_rata': round(float(stat.rata_rata), 2) if stat.rata_rata else 0,
+        'tertinggi': float(stat.tertinggi) if stat.tertinggi else 0,
+        'terendah': float(stat.terendah) if stat.terendah else 0,
+        'jumlah_lulus': stat.jumlah_lulus or 0,
+        'jumlah_tidak_lulus': stat.jumlah_tidak_lulus or 0,
+        'persen_lulus': round((stat.jumlah_lulus or 0) / total * 100, 1) if total else 0,
+    })

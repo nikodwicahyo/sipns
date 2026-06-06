@@ -27,7 +27,7 @@ from app.models import Siswa, Guru, Nilai
 from app.forms.nilai_forms import NilaiForm
 from app.services.audit_service import catat_audit_log
 from app.services.nilai_service import hitung_statistik_kelas
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 logger = logging.getLogger(__name__)
 
@@ -40,33 +40,130 @@ logger = logging.getLogger(__name__)
 @login_required
 @role_required('guru')
 def dashboard():
-    """Halaman dashboard guru: info mapel, total siswa, kelas yang diampu.
+    """Halaman dashboard guru: ringkasan nilai & aktivitas mengajar.
 
-    Menghitung:
-    - Total siswa unik yang pernah dinilai guru ini.
-    - Daftar kelas (distinct) yang pernah dinilai guru ini.
+    Menghitung (sesuai akun guru yang login):
+    - Total siswa aktif di kelas-kelas yang diajar (belum tentu dinilai).
+    - Daftar kelas (distinct) yang pernah dinilai.
+    - Siswa yang sudah dinilai (distinct) vs siswa yang belum dinilai.
+    - Total record nilai, rata-rata, kelulusan.
+    - Chart data: rata-rata nilai per kelas.
+    - 10 nilai terbaru untuk tabel ringkasan.
     """
     guru = Guru.query.get(current_user.guru_id)
     if not guru:
         flash('Data guru tidak ditemukan.', 'error')
         return redirect(url_for('auth.login'))
 
-    # Count distinct siswa_id dari tabel nilai where guru_id = guru.id.
-    total_siswa = db.session.query(func.count(func.distinct(Nilai.siswa_id))).filter(
-        Nilai.guru_id == guru.id
-    ).scalar() or 0
+    # Base filter: hanya nilai yang diinput oleh guru ini.
+    base_filter = [Nilai.guru_id == guru.id]
 
-    # Ambil daftar kelas (distinct) yang pernah dinilai guru ini.
-    kelas_tercatat = db.session.query(Siswa.kelas).join(Nilai, Nilai.siswa_id == Siswa.id).filter(
-        Nilai.guru_id == guru.id, Siswa.deleted_at.is_(None)
-    ).distinct().all()
+    # 1. Daftar kelas (distinct) yang pernah dinilai guru ini.
+    #    Digunakan juga untuk menghitung total siswa di kelas yang diajar.
+    kelas_tercatat = (
+        db.session.query(Siswa.kelas)
+        .join(Nilai, Nilai.siswa_id == Siswa.id)
+        .filter(*base_filter, Siswa.deleted_at.is_(None))
+        .distinct()
+        .all()
+    )
     kelas_list = [k[0] for k in kelas_tercatat]
 
-    return render_template('guru/dashboard.html',
-                           guru=guru,
-                           total_siswa=total_siswa,
-                           kelas_list=kelas_list,
-                           mata_pelajaran=guru.mata_pelajaran)
+    # 2. Total siswa aktif di kelas-kelas yang diajar guru ini.
+    #    Inklusi siswa yang belum dinilai (mereka adalah "belum dinilai").
+    if kelas_list:
+        total_siswa = (
+            db.session.query(func.count(Siswa.id))
+            .filter(Siswa.kelas.in_(kelas_list), Siswa.deleted_at.is_(None))
+            .scalar()
+            or 0
+        )
+    else:
+        # Guru belum pernah menginput nilai => belum diketahui kelas
+        # yang diajar => 0 siswa (tidak menampilkan total siswa dari
+        # kelas yang tidak terkait dengan guru ini).
+        total_siswa = 0
+
+    # 3. Siswa yang sudah memiliki nilai dari guru ini (distinct siswa_id).
+    siswa_dinilai = (
+        db.session.query(func.count(func.distinct(Nilai.siswa_id)))
+        .filter(*base_filter)
+        .scalar()
+        or 0
+    )
+
+    # 4. Siswa yang belum dinilai (di kelas yang sama dengan yang diajar).
+    siswa_belum_dinilai = max(total_siswa - siswa_dinilai, 0)
+
+    # 5. Statistik agregat: total nilai, rata-rata, kelulusan.
+    agg = (
+        db.session.query(
+            func.count(Nilai.id).label('total'),
+            func.avg(Nilai.nilai_akhir).label('rata_rata'),
+            func.count(case((Nilai.status_lulus.is_(True), 1))).label('lulus'),
+            func.count(case((Nilai.status_lulus.is_(False), 1))).label('tidak_lulus'),
+        )
+        .filter(*base_filter)
+        .first()
+    )
+    total_nilai = int(agg.total or 0)
+    rata_rata = round(float(agg.rata_rata), 2) if agg.rata_rata is not None else 0
+    total_lulus = int(agg.lulus or 0)
+    total_tidak_lulus = int(agg.tidak_lulus or 0)
+    persen_lulus = (
+        round((total_lulus / total_nilai * 100), 1)
+        if total_nilai > 0
+        else 0
+    )
+
+    # 6. 10 nilai terbaru (eagerload siswa untuk mencegah N+1 di template).
+    recent_nilai = (
+        Nilai.query
+        .options(db.joinedload(Nilai.siswa))
+        .filter(*base_filter)
+        .order_by(Nilai.created_at.desc())
+        .limit(10)
+        .all()
+    )
+
+    # 7. Chart data: rata-rata nilai per kelas (satu GROUP BY query).
+    chart_rows = (
+        db.session.query(
+            Siswa.kelas.label('kelas'),
+            func.avg(Nilai.nilai_akhir).label('rata_rata'),
+        )
+        .join(Nilai, Nilai.siswa_id == Siswa.id)
+        .filter(
+            *base_filter,
+            Siswa.deleted_at.is_(None),
+            Nilai.nilai_akhir.isnot(None),
+        )
+        .group_by(Siswa.kelas)
+        .order_by(Siswa.kelas)
+        .all()
+    )
+    chart_labels = [r.kelas for r in chart_rows]
+    chart_data = [
+        round(float(r.rata_rata), 2) if r.rata_rata is not None else 0
+        for r in chart_rows
+    ]
+
+    return render_template(
+        'guru/dashboard.html',
+        guru=guru,
+        mata_pelajaran=guru.mata_pelajaran,
+        total_siswa=total_siswa,
+        siswa_dinilai=siswa_dinilai,
+        siswa_belum_dinilai=siswa_belum_dinilai,
+        kelas_list=kelas_list,
+        rata_rata=rata_rata,
+        total_lulus=total_lulus,
+        total_tidak_lulus=total_tidak_lulus,
+        persen_lulus=persen_lulus,
+        recent_nilai=recent_nilai,
+        chart_labels=chart_labels,
+        chart_data=chart_data,
+    )
 
 
 # ===========================================================================
@@ -96,9 +193,19 @@ def input_nilai():
 
     form = NilaiForm()
     kelas_list = Siswa.daftar_kelas()
-    siswa_list = Siswa.query.filter(Siswa.deleted_at.is_(None)).all()
-    # Choices untuk SelectField siswa: format "NIS - Nama (Kelas)".
-    form.siswa_id.choices = [(s.id, f'{s.nis} - {s.nama} ({s.kelas})') for s in siswa_list]
+
+    if request.method == 'POST':
+        siswa_choices = (
+            Siswa.query
+            .filter(Siswa.deleted_at.is_(None))
+            .order_by(Siswa.kelas, Siswa.nama)
+            .all()
+        )
+        form.siswa_id.choices = [
+            (s.id, f'{s.nis} - {s.nama} ({s.kelas})') for s in siswa_choices
+        ]
+    else:
+        form.siswa_id.choices = []
 
     if form.validate_on_submit():
         # Cek apakah nilai untuk (siswa, mapel) sudah ada.
@@ -147,7 +254,13 @@ def input_nilai():
         flash(f'Nilai {guru.mata_pelajaran} berhasil disimpan.', 'success')
         return redirect(url_for('guru.input_nilai'))
 
-    return render_template('guru/nilai/input.html', form=form, guru=guru, kelas_list=kelas_list)
+    return render_template(
+        'guru/nilai/input.html',
+        form=form,
+        guru=guru,
+        kelas_list=kelas_list,
+        selected_kelas=None,
+    )
 
 
 @guru_bp.route('/nilai/edit/<int:id>', methods=['GET', 'POST'])
@@ -159,7 +272,7 @@ def edit_nilai(id):
     Guard: tolak edit jika ``is_locked=True``. Hanya field nilai
     (tugas/uts/uas) yang diedit — siswa_id & mata_pelajaran immutable.
     """
-    nilai = Nilai.query.get_or_404(id)
+    nilai = Nilai.query.options(db.joinedload(Nilai.siswa)).get_or_404(id)
     if nilai.is_locked:
         flash('Nilai sudah terkunci dan tidak dapat diubah.', 'error')
         return redirect(url_for('guru.rekap_nilai'))
@@ -167,8 +280,7 @@ def edit_nilai(id):
     guru = Guru.query.get(current_user.guru_id)
     form = NilaiForm(obj=nilai)
 
-    siswa_list = Siswa.query.filter(Siswa.deleted_at.is_(None)).all()
-    form.siswa_id.choices = [(s.id, f'{s.nis} - {s.nama}') for s in siswa_list]
+    form.siswa_id.choices = [(nilai.siswa_id, f'{nilai.siswa.nis} - {nilai.siswa.nama}')] if nilai.siswa else []
 
     if form.validate_on_submit():
         nilai.nilai_tugas = form.nilai_tugas.data
@@ -180,7 +292,12 @@ def edit_nilai(id):
         flash('Nilai berhasil diperbarui.', 'success')
         return redirect(url_for('guru.rekap_nilai'))
 
-    return render_template('guru/nilai/input.html', form=form, guru=guru, edit_mode=True)
+    return render_template(
+        'guru/nilai/edit.html',
+        form=form,
+        guru=guru,
+        nilai=nilai,
+    )
 
 
 @guru_bp.route('/nilai/kunci/<int:id>', methods=['POST'])
@@ -225,6 +342,7 @@ def rekap_nilai():
     # Query nilai guru ini, JOIN siswa (exclude soft-deleted).
     data_nilai = (
         Nilai.query
+        .options(db.joinedload(Nilai.siswa))
         .filter_by(guru_id=guru.id)
         .join(Siswa, Nilai.siswa_id == Siswa.id)
         .filter(Siswa.deleted_at.is_(None))
@@ -310,3 +428,67 @@ def api_nilai_preview():
         return jsonify({'error': str(e)}), 422
     except Exception:
         return jsonify({'error': 'Terjadi kesalahan'}), 500
+
+
+@guru_bp.route('/api/cek-nilai')
+@login_required
+@role_required('guru')
+def api_cek_nilai():
+    """API (guru): cek apakah siswa sudah punya nilai untuk mapel guru.
+
+    Dipanggil oleh ``guru/nilai/input.html`` setiap kali guru memilih
+    siswa di dropdown, untuk menampilkan info UI (sebelum submit):
+    - ``exists=False``  → "Belum ada nilai, akan dibuat baru."
+    - ``exists=True`` & ``is_locked=False`` → "Sudah ada nilai (T/UTS/UAS),
+        submit akan MENGUBAH nilai existing." + tombol shortcut ke edit.
+    - ``exists=True`` & ``is_locked=True``  → "Nilai terkunci, tidak
+        dapat diubah. Gunakan halaman edit / hubungi admin."
+
+    Query params:
+        siswa_id (int, required): Primary key siswa.
+
+    Returns:
+        Response: JSON ``{exists, is_locked, nilai_id, nilai_tugas,
+        nilai_uts, nilai_uas, nilai_akhir, status_lulus}``. Field nilai
+        di-cast ke ``float`` agar JSON-encodable. Return 400 jika
+        ``siswa_id`` kosong/invalid, 404 jika siswa tidak ditemukan.
+    """
+    siswa_id = request.args.get('siswa_id', type=int)
+    if not siswa_id:
+        return jsonify({'error': 'siswa_id wajib diisi'}), 400
+
+    siswa = Siswa.query.get(siswa_id)
+    if not siswa or siswa.deleted_at is not None:
+        return jsonify({'error': 'Siswa tidak ditemukan'}), 404
+
+    guru = Guru.query.get(current_user.guru_id)
+    if not guru:
+        return jsonify({'error': 'Data guru tidak ditemukan'}), 404
+
+    existing = Nilai.query.filter_by(
+        siswa_id=siswa_id,
+        mata_pelajaran=guru.mata_pelajaran,
+    ).first()
+
+    if not existing:
+        return jsonify({
+            'exists': False,
+            'is_locked': False,
+            'nilai_id': None,
+            'nilai_tugas': None,
+            'nilai_uts': None,
+            'nilai_uas': None,
+            'nilai_akhir': None,
+            'status_lulus': None,
+        })
+
+    return jsonify({
+        'exists': True,
+        'is_locked': bool(existing.is_locked),
+        'nilai_id': existing.id,
+        'nilai_tugas': float(existing.nilai_tugas) if existing.nilai_tugas is not None else None,
+        'nilai_uts': float(existing.nilai_uts) if existing.nilai_uts is not None else None,
+        'nilai_uas': float(existing.nilai_uas) if existing.nilai_uas is not None else None,
+        'nilai_akhir': float(existing.nilai_akhir) if existing.nilai_akhir is not None else None,
+        'status_lulus': bool(existing.status_lulus) if existing.status_lulus is not None else None,
+    })

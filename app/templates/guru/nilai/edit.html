@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Edit Nilai - SIPNS{% endblock %}
+{% block content %}
+<div class="pt-3 pb-2 mb-3 border-bottom d-flex justify-content-between align-items-center">
+    <h3 class="mb-0"><i class="bi bi-pencil-fill"></i> Edit Nilai {{ guru.mata_pelajaran }}</h3>
+    <a href="{{ url_for('guru.rekap_nilai') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Kembali ke Rekap
+    </a>
+</div>
+
+<div class="alert alert-warning d-flex align-items-center" role="alert">
+    <i class="bi bi-info-circle-fill me-2"></i>
+    <div>
+        Mode edit: siswa & mata pelajaran <strong>tidak dapat diubah</strong>.
+        Hanya nilai (Tugas, UTS, UAS) yang dapat diperbarui.
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card text-bg-light h-100">
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small mb-2">Informasi Siswa</h6>
+                <table class="table table-sm table-borderless mb-0">
+                    <tr>
+                        <td class="text-muted" style="width: 90px;">NIS</td>
+                        <td><strong>{{ nilai.siswa.nis if nilai.siswa else '-' }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Nama</td>
+                        <td><strong>{{ nilai.siswa.nama if nilai.siswa else '-' }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Kelas</td>
+                        <td><strong>{{ nilai.siswa.kelas if nilai.siswa else '-' }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="text-muted">Mapel</td>
+                        <td><strong>{{ nilai.mata_pelajaran }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" id="formEditNilai">
+                    {{ form.hidden_tag() }}
+                    {{ form.siswa_id(type='hidden', value=form.siswa_id.data) }}
+                    <div class="mb-3">
+                        <label class="form-label">Nilai Tugas (0-100)</label>
+                        {{ form.nilai_tugas(class='form-control nilai-input' + (' is-invalid' if form.nilai_tugas.errors else ''), id='nilaiTugas', oninput='previewNilai()') }}
+                        {% for error in form.nilai_tugas.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nilai UTS (0-100)</label>
+                        {{ form.nilai_uts(class='form-control nilai-input' + (' is-invalid' if form.nilai_uts.errors else ''), id='nilaiUTS', oninput='previewNilai()') }}
+                        {% for error in form.nilai_uts.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nilai UAS (0-100)</label>
+                        {{ form.nilai_uas(class='form-control nilai-input' + (' is-invalid' if form.nilai_uas.errors else ''), id='nilaiUAS', oninput='previewNilai()') }}
+                        {% for error in form.nilai_uas.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                    </div>
+
+                    <div id="previewArea" class="alert alert-info d-none">
+                        <strong>Preview Nilai Akhir:</strong>
+                        <span id="nilaiAkhirPreview">0</span>
+                        <span id="statusPreview"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Simpan Perubahan
+                        </button>
+                        <a href="{{ url_for('guru.rekap_nilai') }}" class="btn btn-secondary">Batal</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+    function previewNilai() {
+        const tugas = parseFloat(document.getElementById('nilaiTugas').value) || 0;
+        const uts = parseFloat(document.getElementById('nilaiUTS').value) || 0;
+        const uas = parseFloat(document.getElementById('nilaiUAS').value) || 0;
+
+        const preview = document.getElementById('previewArea');
+        const nilaiSpan = document.getElementById('nilaiAkhirPreview');
+        const statusSpan = document.getElementById('statusPreview');
+
+        if (tugas || uts || uas) {
+            const hasil = hitungNilaiAkhir(tugas, uts, uas);
+            preview.classList.remove('d-none');
+            nilaiSpan.textContent = hasil.toFixed(2);
+
+            if (hasil >= 70) {
+                statusSpan.innerHTML = ' <span class="badge bg-success">LULUS</span>';
+            } else {
+                statusSpan.innerHTML = ' <span class="badge bg-danger">TIDAK LULUS</span>';
+            }
+        } else {
+            preview.classList.add('d-none');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        previewNilai();
+    });
+</script>
+{% endblock %}

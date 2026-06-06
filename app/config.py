@@ -16,11 +16,12 @@ class Config:
         SECRET_KEY = 'default-secret-key-change-me-in-production'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    WTF_CSRF_ENABLED = True
+    WTF_CSRF_ENABLED = os.getenv('WTF_CSRF_ENABLED', 'True').lower() == 'true'
 
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
-        'pool_recycle': 3600,
+        'pool_recycle': 300,
+        'pool_use_lifo': True,
         'pool_size': int(os.getenv('DB_POOL_SIZE', 10)),
         'max_overflow': int(os.getenv('DB_MAX_OVERFLOW', 20)),
         'connect_args': {
@@ -30,6 +31,7 @@ class Config:
 
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+    WTF_CSRF_SSL_STRICT = False
     PERMANENT_SESSION_LIFETIME = 7200
 
 
@@ -50,25 +52,23 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_ECHO = False
-    SESSION_COOKIE_SECURE = True
-    PREFERRED_URL_SCHEME = 'https'
+    SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
+    SESSION_COOKIE_SAMESITE = 'None'
+    PREFERRED_URL_SCHEME = os.getenv('PREFERRED_URL_SCHEME', 'https')
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     if not SQLALCHEMY_DATABASE_URI:
-        raise RuntimeError(
-            'DATABASE_URL environment variable is required for production. '
-            'Format: mysql+pymysql://user:password@host:port/dbname?charset=utf8mb4'
-        )
-    # TiDB Cloud WAJIB TLS. ``ssl=True`` -> koneksi terenkripsi, tanpa
-    # verifikasi sertifikat CA (acceptable untuk demo / tugas sekolah).
-    # Untuk strict TLS (verify CA), set DATABASE_URL dengan parameter
-    # ``?ssl_ca=/path&ssl_verify_cert=True`` (lihat docs/DEPLOY_RENDER_TIDB.md).
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        **Config.SQLALCHEMY_ENGINE_OPTIONS,
-        'connect_args': {
-            'connect_timeout': 10,
-            'ssl': True,
-        },
-    }
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///sipns.db'
+        SQLALCHEMY_ENGINE_OPTIONS = {}
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            **Config.SQLALCHEMY_ENGINE_OPTIONS,
+            'connect_args': {
+                'connect_timeout': 10,
+                'ssl': {
+                    'ca': '/etc/ssl/certs/ca-certificates.crt',
+                },
+            },
+        }
 
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'WARNING')
     LOG_FILE = os.getenv('LOG_FILE', 'logs/sipns.log')

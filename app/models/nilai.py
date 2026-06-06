@@ -16,6 +16,7 @@ Author : Niko Dwicahyo
 Versi  : 1.0.0
 """
 from app import db
+from app.utils.cache import cached
 from datetime import datetime
 from app.services.nilai_service import hitung_nilai_akhir, tentukan_status_kelulusan
 from app.utils.constants import (
@@ -219,6 +220,7 @@ class Nilai(db.Model):
         }
 
     @classmethod
+    @cached(ttl=60)
     def daftar_mata_pelajaran(cls, guru_id=None):
         """Ambil daftar mata pelajaran unik yang punya data nilai.
 

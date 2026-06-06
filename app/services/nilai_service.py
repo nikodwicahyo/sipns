@@ -215,7 +215,10 @@ def hitung_statistik_kelas(data_nilai):
 
     # jumlah_lulus dihitung dari SEMUA data_nilai (bukan hanya yang ada nilai_akhir),
     # karena status_lulus bisa True/False tanpa nilai_akhir (edge case di UI).
-    lulus_count = sum(1 for n in data_nilai if n.status_lulus)
+    # Gunakan ekspresi eksplisit n.status_lulus is True agar tidak salah
+    # menghitung None sebagai tidak_lulus.
+    lulus_count = sum(1 for n in data_nilai if n.status_lulus is True)
+    tidak_lulus_count = sum(1 for n in data_nilai if n.status_lulus is False)
 
     return {
         'total': len(nilai_list),
@@ -223,6 +226,6 @@ def hitung_statistik_kelas(data_nilai):
         'tertinggi': max(nilai_list),
         'terendah': min(nilai_list),
         'jumlah_lulus': lulus_count,
-        'jumlah_tidak_lulus': len(nilai_list) - lulus_count,
+        'jumlah_tidak_lulus': tidak_lulus_count,
         'persen_lulus': round((lulus_count / len(nilai_list)) * 100, 1),
     }

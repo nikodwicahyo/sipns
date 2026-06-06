@@ -165,6 +165,7 @@ def _build_nilai_query(filters, mapel_scope=None, guru_id_scope=None):
     """
     query = (
         Nilai.query
+        .options(db.joinedload(Nilai.siswa), db.joinedload(Nilai.guru))
         .join(Siswa, Nilai.siswa_id == Siswa.id)
         .filter(Siswa.deleted_at.is_(None))
     )
@@ -239,7 +240,7 @@ def _validate_filter_ids(filters):
             return 'Filter guru tidak valid (guru tidak ditemukan atau sudah dihapus).', None
     if filters.get('siswa_id') is not None:
         siswa = Siswa.query.get(filters['siswa_id'])
-        if not siswa or siswa.deleted_at is None:
+        if not siswa or siswa.deleted_at is not None:
             return 'Filter siswa tidak valid (siswa tidak ditemukan atau sudah dihapus).', None
     return None, None
 
@@ -302,12 +303,14 @@ def index():
     legacy_kelas_list = kelas_list
 
     # Jika ada filter aktif, jalankan query & hitung statistik untuk preview.
+    # Jika request memiliki query params (form disubmit), anggap filter
+    # diterapkan — bahkan jika semua nilai default "Semua" (None).
     data_nilai = []
     statistik = {
         'rata_rata': 0, 'tertinggi': 0, 'terendah': 0, 'persen_lulus': 0,
         'total': 0, 'jumlah_lulus': 0, 'jumlah_tidak_lulus': 0,
     }
-    filters_applied = _filters_active(filters)
+    filters_applied = _filters_active(filters) or bool(request.args)
 
     if filters_applied:
         # Guard: siswa tidak boleh akses laporan (tidak perlu di sini karena
@@ -377,20 +380,6 @@ def pdf_kelas(kelas):
 
     mapel_filter = _resolve_mata_pelajaran_filter()
 
-    # Guard: tolak generate PDF jika kelas tidak punya data nilai
-    # yang sesuai dengan scope akses user.
-    check_query = (
-        Nilai.query
-        .join(Siswa, Nilai.siswa_id == Siswa.id)
-        .filter(Siswa.kelas == kelas, Siswa.deleted_at.is_(None))
-    )
-    if mapel_filter:
-        check_query = check_query.filter(Nilai.mata_pelajaran == mapel_filter)
-    if not check_query.first():
-        suffix = f' mata pelajaran {mapel_filter}' if mapel_filter else ''
-        flash(f'Tidak ada data nilai untuk kelas {kelas}{suffix}.', 'warning')
-        return redirect(url_for('laporan.index'))
-
     try:
         pdf_bytes = generate_laporan_pdf(kelas, mata_pelajaran=mapel_filter)
         tanggal = now_jakarta().strftime('%Y%m%d')
@@ -427,16 +416,17 @@ def pdf_filter():
     """Generate & download PDF rekap nilai dengan filter multi-kriteria.
 
     Query params (semua optional):
-    - ``kelas`` (str): Filter kelas.
+    - ``kelas`` (str): Filter kelas. Kosong = semua kelas.
     - ``guru_id`` (int): Filter guru penginput.
     - ``mata_pelajaran`` (str): Filter mapel.
     - ``siswa_id`` (int): Filter siswa.
     - ``status_lulus`` (str): ``lulus`` / ``tidak_lulus``.
 
     Aturan:
-    - Minimal satu filter harus diisi (jika tidak, redirect ke index).
+    - ``kelas`` OPSIONAL. PDF akan diekspor untuk semua kelas (atau sesuai
+      filter lain) ketika kelas kosong. Header PDF menampilkan
+      "Semua Kelas" dan kolom Kelas ditambahkan ke tabel.
     - Untuk role guru: ``mata_pelajaran`` & ``guru_id`` otomatis ter-scope.
-    - ``kelas`` WAJIB diisi untuk PDF rekap (PDF butuh scope kelas).
 
     Returns:
         Response: File PDF sebagai attachment.
@@ -448,23 +438,12 @@ def pdf_filter():
     mapel_scope = _resolve_mata_pelajaran_filter()
     guru_id_scope = _resolve_guru_id_scope()
 
-    # PDF rekap membutuhkan kelas sebagai scope utama.
     kelas = filters.get('kelas')
-    if not kelas:
-        flash('Pilih kelas terlebih dahulu untuk mencetak PDF rekap.', 'warning')
-        return redirect(url_for('laporan.index'))
 
     # Validasi ID filter.
     err, _ = _validate_filter_ids(filters)
     if err:
         flash(err, 'warning')
-        return redirect(url_for('laporan.index'))
-
-    # Guard: cek ada data nilai yang match.
-    check_query = _build_nilai_query(filters, mapel_scope=mapel_scope,
-                                     guru_id_scope=guru_id_scope)
-    if not check_query.first():
-        flash('Tidak ada data nilai yang sesuai dengan filter yang dipilih.', 'warning')
         return redirect(url_for('laporan.index'))
 
     # Resolusi filter info untuk header PDF.
@@ -486,7 +465,7 @@ def pdf_filter():
         tanggal = now_jakarta().strftime('%Y%m%d')
 
         # Audit log dengan info filter lengkap.
-        filter_desc_parts = [f'kelas={kelas}']
+        filter_desc_parts = [f'kelas={kelas or "semua"}']
         if effective_mapel:
             filter_desc_parts.append(f'mapel={effective_mapel}')
         if effective_guru_id is not None:
@@ -504,7 +483,8 @@ def pdf_filter():
         )
 
         # Bangun filename dari filter aktif.
-        filename_parts = ['rekap', kelas.replace('/', '_')]
+        safe_kelas = kelas.replace('/', '_') if kelas else 'semua_kelas'
+        filename_parts = ['rekap', safe_kelas]
         if effective_mapel:
             filename_parts.append(effective_mapel.replace('/', '_'))
         if filters.get('status_lulus'):

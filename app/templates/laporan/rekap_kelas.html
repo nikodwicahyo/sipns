@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Rekap Nilai - {{ kelas }}{% if mata_pelajaran %} - {{ mata_pelajaran }}{% endif %}</title>
+    <title>Laporan Rekap Nilai - {{ kelas or 'Semua Kelas' }}{% if mata_pelajaran %} - {{ mata_pelajaran }}{% endif %}</title>
     <style>
         @page {
             size: A4;
@@ -92,7 +92,7 @@
         <h2>LAPORAN REKAP NILAI SISWA</h2>
         <p>SIPNS - Sistem Informasi Pengolahan Nilai Siswa</p>
         <p>
-            <strong>Kelas:</strong> {{ kelas }}
+            <strong>Kelas:</strong> {{ kelas or 'Semua Kelas' }}
             {% if mata_pelajaran %}
             | <strong>Mata Pelajaran:</strong> {{ mata_pelajaran }}
             {% endif %}
@@ -117,6 +117,9 @@
                 <th>No</th>
                 <th>NIS</th>
                 <th>Nama</th>
+                {% if not kelas %}
+                <th>Kelas</th>
+                {% endif %}
                 <th>Mata Pelajaran</th>
                 <th>Tugas</th>
                 <th>UTS</th>
@@ -131,6 +134,9 @@
                 <td>{{ loop.index }}</td>
                 <td>{{ n.siswa.nis if n.siswa else '-' }}</td>
                 <td style="text-align:left;">{{ n.siswa.nama if n.siswa else '-' }}</td>
+                {% if not kelas %}
+                <td>{{ n.siswa.kelas if n.siswa else '-' }}</td>
+                {% endif %}
                 <td style="text-align:left;">{{ n.mata_pelajaran }}</td>
                 <td>{{ n.nilai_tugas }}</td>
                 <td>{{ n.nilai_uts }}</td>
@@ -145,9 +151,9 @@
     </table>
 
     <div class="footer">
-        <h4>Statistik Kelas</h4>
+        <h4>Statistik {{ 'Keseluruhan' if not kelas else 'Kelas' }}</h4>
         <table>
-            <tr><td>Jumlah Siswa</td><td><strong>{{ statistik.total }}</strong></td></tr>
+            <tr><td>Jumlah Record</td><td><strong>{{ statistik.total }}</strong></td></tr>
             <tr><td>Rata-rata Nilai</td><td><strong>{{ statistik.rata_rata }}</strong></td></tr>
             <tr><td>Nilai Tertinggi</td><td><strong>{{ statistik.tertinggi }}</strong></td></tr>
             <tr><td>Nilai Terendah</td><td><strong>{{ statistik.terendah }}</strong></td></tr>

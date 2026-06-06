@@ -40,6 +40,9 @@
             top: 50%;
             transform: translateY(-50%);
         }
+        .btn-primary:disabled {
+            cursor: wait;
+        }
     </style>
 </head>
 <body>
@@ -62,7 +65,7 @@
                 {% endif %}
             {% endwith %}
 
-            <form method="POST" action="{{ url_for('auth.login') }}">
+            <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm">
                 {{ form.hidden_tag() }}
                 <div class="mb-3">
                     <label class="form-label">Username</label>
@@ -91,8 +94,14 @@
                         {% endfor %}
                     {% endif %}
                 </div>
-                <button type="submit" class="btn btn-primary w-100 py-2">
-                    <i class="bi bi-box-arrow-in-right"></i> Masuk
+                <button type="submit" class="btn btn-primary w-100 py-2" id="loginSubmit">
+                    <span id="loginSubmitDefault">
+                        <i class="bi bi-box-arrow-in-right"></i> Masuk
+                    </span>
+                    <span id="loginSubmitLoading" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Memproses...
+                    </span>
                 </button>
             </form>
 
@@ -120,6 +129,26 @@
                 icon.classList.replace('bi-eye-slash', 'bi-eye');
             }
         }
+
+        // Loading spinner saat tombol "Masuk" ditekan.
+        // Disable tombol + ganti label ke spinner agar user tahu sedang diproses
+        // dan tidak double-click. onsubmit (bukan onclick) agar spinner muncul
+        // sebelum form benar-benar di-submit ke server.
+        (function () {
+            var form = document.getElementById('loginForm');
+            var btn = document.getElementById('loginSubmit');
+            var lblDefault = document.getElementById('loginSubmitDefault');
+            var lblLoading = document.getElementById('loginSubmitLoading');
+            if (!form || !btn) return;
+
+            form.addEventListener('submit', function () {
+                // Hanya trigger loading state jika form valid (HTML5 validation).
+                if (!form.checkValidity()) return;
+                btn.disabled = true;
+                lblDefault.classList.add('d-none');
+                lblLoading.classList.remove('d-none');
+            });
+        })();
     </script>
 </body>
 </html>

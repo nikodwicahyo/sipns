@@ -31,4 +31,5 @@ Thumbs.db
 # Distribution
 *.egg-info/
 dist/
+!app/static/dist/
 build/

@@ -205,6 +205,8 @@ class TestSiswaModel:
 
     def test_daftar_kelas_exclude_soft_deleted(self, db, sample_siswa):
         """daftar_kelas() tidak termasuk kelas yang siswanya semua soft-deleted."""
+        from app.utils.cache import cache_clear
+        cache_clear()
         # Hapus semua siswa X-IPA-1
         for s in sample_siswa:
             if s.kelas == 'X-IPA-1':

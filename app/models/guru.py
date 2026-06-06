@@ -71,14 +71,10 @@ class Guru(db.Model):
         """
         from app.models.siswa import Siswa
         from app.models.nilai import Nilai
-        # Subquery: distinct siswa_id yang pernah dinilai guru ini.
-        siswa_ids = db.session.query(Nilai.siswa_id).filter_by(
-            guru_id=self.id
+        return Siswa.query.join(Nilai, Siswa.id == Nilai.siswa_id).filter(
+            Nilai.guru_id == self.id,
+            Siswa.deleted_at.is_(None),
         ).distinct().all()
-        # Resolve ID → instance Siswa.
-        return Siswa.query.filter(
-            Siswa.id.in_([s[0] for s in siswa_ids])
-        ).all()
 
     def soft_delete(self):
         """Lakukan soft delete dengan menandai ``deleted_at = utcnow()``.

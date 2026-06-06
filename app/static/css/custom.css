@@ -1,21 +1,29 @@
 :root {
     --sidebar-width: 250px;
+    --navbar-height: 56px;
 }
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
+    overflow-x: hidden;
 }
 
+/* ============================================================
+   DESKTOP SIDEBAR (lg+ only, hidden via d-lg-none on < lg)
+   Fixed position, scrollable independently from main content.
+   ============================================================ */
 .sidebar {
     position: fixed;
-    top: 56px;
+    top: var(--navbar-height);
     left: 0;
     bottom: 0;
-    width: 250px;
+    width: var(--sidebar-width);
     z-index: 100;
     overflow-y: auto;
+    overflow-x: hidden;
     border-right: 1px solid #dee2e6;
+    background-color: #f8f9fa;
 }
 
 .sidebar .nav-link {
@@ -23,6 +31,9 @@ body {
     padding: 0.75rem 1rem;
     border-radius: 0;
     margin: 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar .nav-link:hover {
@@ -34,9 +45,105 @@ body {
     color: white;
 }
 
+/* ============================================================
+   OFFCANVAS SIDEBAR (tablet & phone, < lg)
+   Hidden via d-lg-none on lg+. Slides in from left as overlay.
+   ============================================================ */
+.app-sidebar {
+    top: var(--navbar-height) !important;
+    height: calc(100vh - var(--navbar-height)) !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    border-right: 1px solid #dee2e6;
+}
+
+/* XS phones: nearly full-width drawer with small margin */
+@media (max-width: 575.98px) {
+    .app-sidebar {
+        width: 85% !important;
+        max-width: 320px !important;
+    }
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_length {
+        float: none !important;
+        text-align: left;
+        margin-bottom: 0.5rem;
+    }
+    .dataTables_wrapper .dataTables_info,
+    .dataTables_wrapper .dataTables_paginate {
+        float: none !important;
+        text-align: center;
+        margin-top: 0.5rem;
+    }
+    .row.g-3 > [class*="col-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    .d-flex.justify-content-between.align-items-center.pt-3.pb-2.mb-3.border-bottom h3 {
+        font-size: 1.15rem;
+    }
+    .d-flex.justify-content-between.align-items-center.pt-3.pb-2.mb-3.border-bottom h3 i {
+        font-size: 1.25rem;
+    }
+    main.app-main {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+    .card-header {
+        padding: 0.75rem 1rem;
+    }
+    .card-header h5 {
+        font-size: 0.9rem;
+    }
+}
+
+/* Tablets (sm & md): wider for readability */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .app-sidebar {
+        width: 300px !important;
+    }
+}
+
+/* Reset fixed-position on inner sidebar/nav so it follows offcanvas flow */
+.app-sidebar .sidebar,
+.app-sidebar .nav {
+    position: static !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    border-right: none !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    overflow: visible !important;
+}
+
+.app-sidebar .offcanvas-header {
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem;
+}
+
+.app-sidebar .offcanvas-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================================
+   MAIN CONTENT AREA
+   - On < lg: full width, no sidebar
+   - On lg+: offset by fixed sidebar width (250px) to prevent overlap.
+     This fixes the 1200x800 cutoff where main was hidden under sidebar.
+   ============================================================ */
 main {
-    margin-top: 56px;
-    min-height: calc(100vh - 56px);
+    margin-top: var(--navbar-height);
+    min-height: calc(100vh - var(--navbar-height));
+}
+
+@media (min-width: 992px) {
+    main.app-main {
+        margin-left: var(--sidebar-width);
+        max-width: calc(100% - var(--sidebar-width));
+    }
 }
 
 .card {
@@ -86,6 +193,21 @@ table.dataTable {
     z-index: 1030;
 }
 
+/* Pada tablet & phone (< lg), brand (logo + SIPNS) di-center absolut
+   terhadap navbar (hamburger di kiri, dropdown user di kanan disembunyikan).
+   Di lg+ brand kembali ke flow normal — tidak di-override.
+   !important untuk menang dari default Bootstrap (.navbar-brand tanpa
+   positioning context rule). */
+@media (max-width: 991.98px) {
+    .navbar > .container-fluid > .navbar-brand {
+        position: absolute !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        margin: 0 !important;
+    }
+}
+
 #previewArea {
     transition: all 0.3s ease;
 }
@@ -106,10 +228,11 @@ table.dataTable {
     main {
         margin-top: 0 !important;
         margin-left: 0 !important;
-    }
-    .col-md-10 {
+        max-width: 100% !important;
         width: 100% !important;
-        flex: 0 0 100% !important;
+    }
+    .app-sidebar {
+        display: none !important;
     }
 }
 
@@ -282,4 +405,79 @@ body.landing-page {
     .hero-section .lead {
         font-size: 1rem;
     }
+}
+
+/* ============================================================
+   DATA TABLE RESPONSIVE BEHAVIOR
+   ============================================================
+   - white-space: nowrap pada td agar row height konsisten
+   - padding lebih kecil di layar sempit agar muat lebih banyak kolom
+   - text-truncate pada kolom aksi (kolom terakhir biasanya)
+   ============================================================ */
+.table.dataTable,
+.table {
+    width: 100% !important;
+}
+
+.table.dataTable td,
+.table.dataTable th {
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Allow specific columns to wrap text (e.g., deskripsi in audit log) */
+.table td.text-wrap,
+.table th.text-wrap {
+    white-space: normal;
+}
+
+@media (max-width: 767.98px) {
+    .table.dataTable td,
+    .table.dataTable th {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.85rem;
+    }
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_length,
+    .dataTables_wrapper .dataTables_info {
+        font-size: 0.85rem;
+    }
+    .row > .col-md-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* ============================================================
+   PAGE HEADER & CARD RESPONSIVE
+   ============================================================ */
+.d-flex.justify-content-between.align-items-center.pt-3.pb-2.mb-3.border-bottom {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.d-flex.justify-content-between.align-items-center.pt-3.pb-2.mb-3.border-bottom h3 {
+    font-size: 1.5rem;
+}
+
+/* ============================================================
+   SAFE HORIZONTAL OVERFLOW GUARDS
+   ============================================================ */
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Chart containers in cards */
+.card-body canvas {
+    max-width: 100%;
+}
+
+/* ============================================================
+   OFFCANVAS BODY HEIGHT FIX
+   ============================================================
+   Bootstrap offcanvas uses 100vh by default which is too tall
+   when stuck below the 56px navbar. Override to subtract navbar.
+   ============================================================ */
+.offcanvas {
+    max-height: 100vh;
 }

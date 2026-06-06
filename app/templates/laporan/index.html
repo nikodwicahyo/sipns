@@ -45,16 +45,25 @@
                 {# Filter Mata Pelajaran #}
                 <div class="col-md-6 col-lg-3">
                     <label class="form-label">Mata Pelajaran</label>
-                    <select class="form-select" name="mata_pelajaran" id="filterMapel" data-cascade="mapel"
-                            {% if mapel_scope %}disabled{% endif %}>
-                        <option value="">-- Semua Mapel --</option>
-                        {% for m in mapel_list %}
-                        <option value="{{ m }}" {% if filters.mata_pelajaran == m %}selected{% endif %}>{{ m }}</option>
-                        {% endfor %}
-                    </select>
                     {% if mapel_scope %}
-                    <input type="hidden" name="mata_pelajaran" value="{{ mapel_scope }}">
-                    <small class="text-muted"><i class="bi bi-lock"></i> Terkunci: {{ mapel_scope }}</small>
+                        {# Guru: mapel di-lock, tampilkan sebagai selected & disabled #}
+                        <select class="form-select" id="filterMapel" disabled>
+                            <option value="{{ mapel_scope }}" selected>{{ mapel_scope }}</option>
+                        </select>
+                        <input type="hidden" name="mata_pelajaran" value="{{ mapel_scope }}">
+                        <div class="mt-1">
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-lock-fill"></i> Terkunci: {{ mapel_scope }}
+                            </span>
+                        </div>
+                    {% else %}
+                        {# Admin: dropdown editable dengan semua mapel #}
+                        <select class="form-select" name="mata_pelajaran" id="filterMapel" data-cascade="mapel">
+                            <option value="">-- Semua Mapel --</option>
+                            {% for m in mapel_list %}
+                            <option value="{{ m }}" {% if filters.mata_pelajaran == m %}selected{% endif %}>{{ m }}</option>
+                            {% endfor %}
+                        </select>
                     {% endif %}
                 </div>
 
@@ -390,12 +399,20 @@
         Array.from(form.elements).forEach(function (el) {
             if (!el.name) return;
             if (el.disabled) return; // skip disabled (mis. mapel_scope hidden)
-            if (el.value === '' || el.value === null) return;
             // Skip submit & button elements.
             if (el.type === 'submit' || el.type === 'button') return;
-            params.push(encodeURIComponent(el.name) + '=' + encodeURIComponent(el.value));
+            var value = (el.value === null || el.value === undefined) ? '' : el.value;
+            params.push(encodeURIComponent(el.name) + '=' + encodeURIComponent(value));
         });
         return params.join('&');
+    }
+
+    function hasAnyFilterValue() {
+        var filterIds = ['filterGuru', 'filterMapel', 'filterKelas', 'filterSiswa', 'filterStatus'];
+        return filterIds.some(function (id) {
+            var el = document.getElementById(id);
+            return el && el.value && el.value !== '';
+        });
     }
 
     // ========================================================================
@@ -405,24 +422,10 @@
     var btnCetakPdfFilter = document.getElementById('btnCetakPdfFilter');
     if (btnCetakPdfFilter) {
         btnCetakPdfFilter.addEventListener('click', function () {
+            // PDF diizinkan tanpa filter kelas (default "Semua") —
+            // server akan mengekspor seluruh data sesuai scope user dan
+            // menampilkan kolom Kelas di output PDF.
             var qs = buildFilterQueryString();
-            if (!qs) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Filter Kosong',
-                    text: 'Pilih minimal satu filter (kelas/mapel/dll) sebelum mencetak PDF.',
-                });
-                return;
-            }
-            // PDF butuh kelas — jika tidak ada kelas, kasih warning.
-            if (qs.indexOf('kelas=') === -1) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Kelas Belum Dipilih',
-                    text: 'Untuk cetak PDF rekap, kelas wajib dipilih. (Untuk export Excel tanpa kelas, gunakan tombol Export Excel.)',
-                });
-                return;
-            }
             window.open('/laporan/pdf/filter?' + qs, '_blank');
         });
     }
@@ -431,14 +434,8 @@
     if (btnExportExcelFilter) {
         btnExportExcelFilter.addEventListener('click', function () {
             var qs = buildFilterQueryString();
-            if (!qs) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Filter Kosong',
-                    text: 'Pilih minimal satu filter sebelum mengexport Excel.',
-                });
-                return;
-            }
+            // Excel boleh diekspor dengan filter kosong (default "Semua")
+            // — server akan mengekspor seluruh data sesuai scope user.
             window.location.href = '/laporan/excel?' + qs;
         });
     }

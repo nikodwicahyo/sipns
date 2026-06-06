@@ -79,6 +79,56 @@ function confirmHapus(url, nama) {
     return false;
 }
 
+// SweetAlert: konfirmasi aktivasi / nonaktivasi user.
+// Dipakai dari admin/users/index.html. isActive = true => Nonaktifkan
+// (user sedang aktif); isActive = false => Aktifkan (user nonaktif).
+function confirmToggleAktif(url, username, isActive) {
+    var action = isActive ? 'Nonaktifkan' : 'Aktifkan';
+    var confirmText = isActive ? 'Ya, Nonaktifkan' : 'Ya, Aktifkan';
+    var color = isActive ? '#dc3545' : '#198754';
+    Swal.fire({
+        title: action + ' user ' + username + '?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: color,
+        confirmButtonText: confirmText,
+        cancelButtonText: 'Batal',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = url;
+            var csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = getCSRFToken();
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+    return false;
+}
+
+// SweetAlert: konfirmasi kunci nilai. Dipakai dari guru/nilai/rekap.html.
+// Menerima elemen form, lalu submit form tsb jika user konfirmasi.
+function confirmKunciNilai(form) {
+    Swal.fire({
+        title: 'Kunci nilai ini?',
+        text: 'Nilai tidak dapat diubah setelah dikunci.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        confirmButtonText: 'Ya, Kunci',
+        cancelButtonText: 'Batal',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.forEach(function(el) {

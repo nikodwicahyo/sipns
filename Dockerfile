@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libffi-dev \
         shared-mime-info \
         fonts-dejavu-core \
+        ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # ---- Working directory ----
@@ -52,8 +53,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy seluruh source (file yang tidak perlu di-exclude via .dockerignore).
 COPY . .
 
-# ---- Create logs directory (digunakan oleh ProductionConfig) ----
-RUN mkdir -p /app/logs
+# ---- Create logs & instance directories (ProductionConfig + SQLite) ----
+RUN mkdir -p /app/logs /app/instance
 
 # ---- Hugging Face Spaces Docker SDK configuration ----
 # HF Spaces WAJIB listen di port 7860 untuk Docker SDK.
@@ -73,4 +74,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
 #   - flask db upgrade: Alembic skip jika tidak ada migration baru
 #   - flask seed:       guard `if User.query.first(): return` di app/seed.py
 # Trade-off: tambah ~2-3 detik ke cold start.
-CMD ["sh", "-c", "flask db upgrade && flask seed && gunicorn --bind 0.0.0.0:$PORT --workers 1 --preload --timeout 60 --access-logfile - --error-logfile - --log-level info wsgi:app"]
+CMD ["sh", "-c", "flask db upgrade && flask seed && gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile - --log-level info wsgi:app"]
